@@ -52,6 +52,8 @@ psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attribute
   }
 
   strcpy((char*)out_key, OPAQUE_TEST_DRIVER_KEYHEADER);
+
+  // Obscure key slightly.
   rot13(in_key, in_key_len, out_key + strlen(OPAQUE_TEST_DRIVER_KEYHEADER));
 
   *out_key_len = in_key_len + strlen(OPAQUE_TEST_DRIVER_KEYHEADER);

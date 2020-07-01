@@ -3,3 +3,12 @@ opaque_test_driver_invalid_param:
 
 Opaque test driver - Bad parameters
 opaque_test_driver_bad_param:
+
+Opaque test driver - Import key #1
+opaque_test_driver_import_key:"Hello world 1234"
+
+Opaque test driver - Import key #2
+opaque_test_driver_import_key:"Uryyb jbeyq 5678"
+
+Opaque test driver - Import key #3
+opaque_test_driver_import_key:"The quick brown fox jumps over t"
