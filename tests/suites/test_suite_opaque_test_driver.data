@@ -12,3 +12,12 @@ opaque_test_driver_import_key:"Uryyb jbeyq 5678"
 
 Opaque test driver - Import key #3
 opaque_test_driver_import_key:"The quick brown fox jumps over t"
+
+Opaque test driver - Generate key #1
+opaque_test_driver_generate_key:PSA_KEY_TYPE_AES:128
+
+Opaque test driver - Generate key #2
+opaque_test_driver_generate_key:PSA_KEY_TYPE_AES:192
+
+Opaque test driver - Generate key #3
+opaque_test_driver_generate_key:PSA_KEY_TYPE_AES:256

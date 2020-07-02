@@ -22,16 +22,16 @@ static void rot13(const uint8_t *in, size_t len, uint8_t *out)
 }
 
 psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attributes,
-                                           const uint8_t *in_key,
-                                           size_t        in_key_len,
-                                           uint8_t       *out_key,
-                                           size_t        out_key_bufsize,
-                                           size_t        *out_key_len)
+                                           const uint8_t *in,
+                                           size_t        in_length,
+                                           uint8_t       *out,
+                                           size_t        out_size,
+                                           size_t        *out_length)
 {
-  OPQTD_VALIDATE_RET(attributes  != NULL);
-  OPQTD_VALIDATE_RET(in_key      != NULL);
-  OPQTD_VALIDATE_RET(out_key     != NULL);
-  OPQTD_VALIDATE_RET(out_key_len != NULL);
+  OPQTD_VALIDATE_RET(attributes != NULL);
+  OPQTD_VALIDATE_RET(in         != NULL);
+  OPQTD_VALIDATE_RET(out        != NULL);
+  OPQTD_VALIDATE_RET(out_length != NULL);
 
   if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
     return PSA_ERROR_NOT_SUPPORTED;
@@ -43,20 +43,90 @@ psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attribute
     return PSA_ERROR_NOT_SUPPORTED;
   }
 
-  if (psa_get_key_bits(attributes) != PSA_BYTES_TO_BITS(in_key_len)) {
+  if (psa_get_key_bits(attributes) != PSA_BYTES_TO_BITS(in_length)) {
     return PSA_ERROR_INVALID_ARGUMENT;
   }
 
-  if (strlen(OPAQUE_TEST_DRIVER_KEYHEADER) + in_key_len > out_key_bufsize) {
+  if (strlen(OPAQUE_TEST_DRIVER_KEYHEADER) + in_length > out_size) {
     return PSA_ERROR_BUFFER_TOO_SMALL;
   }
 
-  strcpy((char*)out_key, OPAQUE_TEST_DRIVER_KEYHEADER);
+  strcpy((char*)out, OPAQUE_TEST_DRIVER_KEYHEADER);
 
   // Obscure key slightly.
-  rot13(in_key, in_key_len, out_key + strlen(OPAQUE_TEST_DRIVER_KEYHEADER));
+  rot13(in, in_length, out + strlen(OPAQUE_TEST_DRIVER_KEYHEADER));
 
-  *out_key_len = in_key_len + strlen(OPAQUE_TEST_DRIVER_KEYHEADER);
+  *out_length = in_length + strlen(OPAQUE_TEST_DRIVER_KEYHEADER);
 
   return PSA_SUCCESS;
+}
+
+psa_status_t opaque_test_driver_generate_key(const psa_key_attributes_t *attributes,
+                                             uint8_t *data,
+                                             size_t  data_size,
+                                             size_t  *data_length)
+{
+  uint8_t key[32];
+  size_t key_length;
+  psa_status_t status;
+
+  OPQTD_VALIDATE_RET(attributes  != NULL);
+  OPQTD_VALIDATE_RET(data        != NULL);
+  OPQTD_VALIDATE_RET(data_length != NULL);
+
+  if (psa_get_key_bits(attributes) == 0) {
+    return PSA_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
+    return PSA_ERROR_NOT_SUPPORTED;
+  }
+
+  if ((psa_get_key_bits(attributes) != 128)          // AES-128
+      && (psa_get_key_bits(attributes) != 192)       // AES-192
+      && (psa_get_key_bits(attributes) != 256)) {    // AES-256
+    return PSA_ERROR_NOT_SUPPORTED;
+  }
+
+  if (strlen(OPAQUE_TEST_DRIVER_KEYHEADER)
+      + PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)) > data_size) {
+    return PSA_ERROR_BUFFER_TOO_SMALL;
+  }
+
+  // Generate key.
+#if 0
+  psa_key_handle_t key_handle = 0;
+  psa_key_attributes_t attr = *attributes;
+  psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_EXPORT);
+
+  status = psa_generate_key(&attr, &key_handle);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+
+  // Export the generated key to get hold of the data.
+  status = psa_export_key(key_handle, key, 32, &key_length);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+
+  status = psa_destroy_key(key_handle);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+#else
+
+  key_length = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
+  status = psa_generate_random(key, key_length);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+#endif
+
+  return opaque_test_driver_import_key(attributes,
+                                       key,
+                                       key_length,
+                                       data,
+                                       data_size,
+                                       data_length);
 }
