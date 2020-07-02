@@ -5,15 +5,13 @@
 /* BEGIN_CASE depends_on:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
 void opaque_test_driver_invalid_param( )
 {
-  uint8_t in_key[16];
-  uint8_t out_key[16 + strlen(OPAQUE_TEST_DRIVER_KEYHEADER)];
   size_t out_key_len;
-  psa_key_attributes_t attr = {
-    .core = {
-      .type = PSA_KEY_TYPE_AES,
-      .bits = 128
-    }
-  };
+  uint8_t in_key[16];
+  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+  uint8_t out_key[16 + strlen(OPAQUE_TEST_DRIVER_KEYHEADER)];
+
+  psa_set_key_type( &attr, PSA_KEY_TYPE_AES );
+  psa_set_key_bits( &attr, 128);
 
   // Check validity of parameter set.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_import_key(&attr,
@@ -59,15 +57,13 @@ exit:
 /* BEGIN_CASE */
 void opaque_test_driver_bad_param( )
 {
-  uint8_t in_key[16];
-  uint8_t out_key[16 + strlen(OPAQUE_TEST_DRIVER_KEYHEADER)];
   size_t out_key_len;
-  psa_key_attributes_t attr = {
-    .core = {
-      .type = PSA_KEY_TYPE_AES,
-      .bits = 128
-    }
-  };
+  uint8_t in_key[16];
+  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+  uint8_t out_key[16 + strlen(OPAQUE_TEST_DRIVER_KEYHEADER)];
+
+  psa_set_key_type( &attr, PSA_KEY_TYPE_AES );
+  psa_set_key_bits( &attr, 128);
 
   // Check validity of parameter set.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_import_key(&attr,
@@ -116,15 +112,17 @@ exit:
 /* BEGIN_CASE */
 void opaque_test_driver_import_key(char *key_material)
 {
+  size_t out_key_len = 0;
+  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
   uint8_t out_key1[32 + strlen(OPAQUE_TEST_DRIVER_KEYHEADER) + 1];
   uint8_t out_key2[32 + strlen(OPAQUE_TEST_DRIVER_KEYHEADER) + 1];
-  size_t out_key_len = 0;
-  psa_key_attributes_t attr = {
-    .core = {
-      .type = PSA_KEY_TYPE_AES,
-      .bits = PSA_BYTES_TO_BITS(strlen(key_material))
-    }
-  };
+
+  // --- Figure out if we should set usage & alg attributes ---
+  // psa_set_key_usage_flags( &attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
+  // psa_set_key_algorithm( &attributes, alg );
+
+  psa_set_key_type( &attr, PSA_KEY_TYPE_AES );
+  psa_set_key_bits( &attr, PSA_BYTES_TO_BITS(strlen(key_material)));
 
   TEST_ASSERT(strlen(key_material) <= 32);
   //mbedtls_fprintf(stdout, "\n%lu %s\n", strlen(key_material), key_material);

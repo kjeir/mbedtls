@@ -33,17 +33,17 @@ psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attribute
   OPQTD_VALIDATE_RET(out_key     != NULL);
   OPQTD_VALIDATE_RET(out_key_len != NULL);
 
-  if (attributes->core.type != PSA_KEY_TYPE_AES) {
+  if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
     return PSA_ERROR_NOT_SUPPORTED;
   }
 
-  if ((attributes->core.bits != 128)          // AES-128
-      && (attributes->core.bits != 192)       // AES-192
-      && (attributes->core.bits != 256)) {    // AES-256
+  if ((psa_get_key_bits(attributes) != 128)          // AES-128
+      && (psa_get_key_bits(attributes) != 192)       // AES-192
+      && (psa_get_key_bits(attributes) != 256)) {    // AES-256
     return PSA_ERROR_NOT_SUPPORTED;
   }
 
-  if (attributes->core.bits != PSA_BYTES_TO_BITS(in_key_len)) {
+  if (psa_get_key_bits(attributes) != PSA_BYTES_TO_BITS(in_key_len)) {
     return PSA_ERROR_INVALID_ARGUMENT;
   }
 
