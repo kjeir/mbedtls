@@ -2,82 +2,6 @@
 #include "suites/opaque_test_driver.function"
 /* END_HEADER */
 
-/* BEGIN_CASE depends_on:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
-void opaque_test_driver_invalid_param()
-{
-  #define BUFSIZE (16U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
-  size_t out_key_len;
-  uint8_t in_key[16];
-  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
-  uint8_t out_key[BUFSIZE];
-
-  psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
-  psa_set_key_bits(&attr, 128);
-
-  TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
-
-  // Check validity of parameter set.
-  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_import_key(&attr,
-                                                           in_key,
-                                                           16,
-                                                           out_key,
-                                                           BUFSIZE,
-                                                           &out_key_len));
-  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
-                         opaque_test_driver_import_key(NULL,
-                                                       in_key,
-                                                       16,
-                                                       out_key,
-                                                       BUFSIZE,
-                                                       &out_key_len));
-  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
-                         opaque_test_driver_import_key(&attr,
-                                                       NULL,
-                                                       16,
-                                                       out_key,
-                                                       BUFSIZE,
-                                                       &out_key_len));
-  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
-                         opaque_test_driver_import_key(&attr,
-                                                       in_key,
-                                                       16,
-                                                       NULL,
-                                                       BUFSIZE,
-                                                       &out_key_len));
-  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
-                         opaque_test_driver_import_key(&attr,
-                                                       in_key,
-                                                       16,
-                                                       out_key,
-                                                       BUFSIZE,
-                                                       NULL));
-  // Check validity of parameter set.
-  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_generate_key(&attr,
-                                                       out_key,
-                                                       BUFSIZE,
-                                                       &out_key_len));
-  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
-                         opaque_test_driver_generate_key(NULL,
-                                                       out_key,
-                                                       BUFSIZE,
-                                                       &out_key_len));
-  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
-                         opaque_test_driver_generate_key(&attr,
-                                                       NULL,
-                                                       BUFSIZE,
-                                                       &out_key_len));
-  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
-                         opaque_test_driver_generate_key(&attr,
-                                                       out_key,
-                                                       BUFSIZE,
-                                                       NULL));
-
-exit:
-  mbedtls_psa_crypto_free();
-  #undef BUFSIZE
-}
-/* END_CASE */
-
 /* BEGIN_CASE */
 void opaque_test_driver_bad_param()
 {
@@ -87,10 +11,10 @@ void opaque_test_driver_bad_param()
   psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
   uint8_t out_key[BUFSIZE];
 
+  TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
+
   psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
   psa_set_key_bits(&attr, 128);
-
-  TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
 
   // Check validity of parameter set.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_import_key(&attr,
@@ -155,6 +79,47 @@ void opaque_test_driver_bad_param()
                                                            &out_key_len));
   attr.core.bits = 128;
 exit:
+  psa_reset_key_attributes(&attr);
+  mbedtls_psa_crypto_free();
+  #undef BUFSIZE
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
+void opaque_test_driver_export_public_key(char *in, char *exp_out)
+{
+  #define BUFSIZE (32U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
+
+  size_t out_len;
+  uint8_t out[BUFSIZE];
+  //char test_key[] = "OPQTDKHEADERUryyb jbeyq 1234";
+
+  TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
+
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_export_public_key(
+                               (uint8_t*)in,
+                               strlen(in),
+                               out,
+                               BUFSIZE,
+                               &out_len));
+
+
+  mbedtls_fprintf(stdout, "\nExported key,    len:%lu data:", out_len);
+  for (unsigned i = 0; i < out_len; i++) {
+    if (isalpha(out[i])) {
+      mbedtls_fprintf(stdout, "'%c' ", out[i]);
+    } else {
+      mbedtls_fprintf(stdout, "%02X ", out[i]);
+    }
+  }
+  mbedtls_fprintf(stdout, "\n");
+
+  TEST_ASSERT(0 == mbedtls_test_hexcmp(out,
+                                       (uint8_t*)exp_out,
+                                       out_len,
+                                       strlen(exp_out)));
+
+exit:
   mbedtls_psa_crypto_free();
   #undef BUFSIZE
 }
@@ -166,14 +131,14 @@ void opaque_test_driver_generate_key(int type_arg, int bits_arg)
   #define BUFSIZE (32U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
   size_t key_len = 0;
   uint8_t key[BUFSIZE];
-  psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-
-  psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_EXPORT);
-  psa_set_key_type(&attributes, type_arg);
-  psa_set_key_bits(&attributes, bits_arg);
+  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 
   TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
-  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_generate_key(&attributes,
+
+  psa_set_key_type(&attr, type_arg);
+  psa_set_key_bits(&attr, bits_arg);
+
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_generate_key(&attr,
                                key,
                                BUFSIZE,
                                &key_len));
@@ -189,6 +154,7 @@ void opaque_test_driver_generate_key(int type_arg, int bits_arg)
   mbedtls_fprintf(stdout, "\n");
 
 exit:
+  psa_reset_key_attributes(&attr);
   mbedtls_psa_crypto_free();
   #undef BUFSIZE
 }
@@ -203,7 +169,9 @@ void opaque_test_driver_import_key(char *key_material)
   uint8_t out_key1[BUFSIZE + 1];
   uint8_t out_key2[BUFSIZE + 1];
 
-  // --- Figure out if we should set usage & alg attributes ---
+  TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
+
+  // --- Figure out if we should set usage & alg attributes ? ---
   // psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
   // psa_set_key_algorithm(&attributes, alg);
 
@@ -244,7 +212,85 @@ void opaque_test_driver_import_key(char *key_material)
                                        strlen((char*)out_key2 + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)));
 
 exit:
-  return;
+  psa_reset_key_attributes(&attr);
+  mbedtls_psa_crypto_free();
+  #undef BUFSIZE
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
+void opaque_test_driver_invalid_param()
+{
+  #define BUFSIZE (16U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
+  size_t out_key_len;
+  uint8_t in_key[16];
+  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+  uint8_t out_key[BUFSIZE];
+
+  TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
+
+  psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+  psa_set_key_bits(&attr, 128);
+
+  // Check validity of parameter set.
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_import_key(&attr,
+                                                           in_key,
+                                                           16,
+                                                           out_key,
+                                                           BUFSIZE,
+                                                           &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_import_key(NULL,
+                                                       in_key,
+                                                       16,
+                                                       out_key,
+                                                       BUFSIZE,
+                                                       &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_import_key(&attr,
+                                                       NULL,
+                                                       16,
+                                                       out_key,
+                                                       BUFSIZE,
+                                                       &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_import_key(&attr,
+                                                       in_key,
+                                                       16,
+                                                       NULL,
+                                                       BUFSIZE,
+                                                       &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_import_key(&attr,
+                                                       in_key,
+                                                       16,
+                                                       out_key,
+                                                       BUFSIZE,
+                                                       NULL));
+  // Check validity of parameter set.
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_generate_key(&attr,
+                                                       out_key,
+                                                       BUFSIZE,
+                                                       &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_generate_key(NULL,
+                                                       out_key,
+                                                       BUFSIZE,
+                                                       &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_generate_key(&attr,
+                                                       NULL,
+                                                       BUFSIZE,
+                                                       &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_generate_key(&attr,
+                                                       out_key,
+                                                       BUFSIZE,
+                                                       NULL));
+
+exit:
+  psa_reset_key_attributes(&attr);
+  mbedtls_psa_crypto_free();
   #undef BUFSIZE
 }
 /* END_CASE */
