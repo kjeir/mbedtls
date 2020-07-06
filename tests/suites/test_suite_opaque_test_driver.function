@@ -78,6 +78,25 @@ void opaque_test_driver_bad_param()
                                                            BUFSIZE,
                                                            &out_key_len));
   attr.core.bits = 128;
+  // Check validity of parameter set.
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_export_public_key(
+                               (uint8_t*)"OPQTDKHEADERHello world 1234",
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 16,
+                               out_key,
+                               BUFSIZE,
+                               &out_key_len));
+  TEST_ASSERT(PSA_ERROR_INVALID_ARGUMENT == opaque_test_driver_export_public_key(
+                               (uint8_t*)"OPQTDKHEADERHello world 1234",
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE,
+                               out_key,
+                               BUFSIZE,
+                               &out_key_len));
+  TEST_ASSERT(PSA_ERROR_BUFFER_TOO_SMALL == opaque_test_driver_export_public_key(
+                               (uint8_t*)"OPQTDKHEADERHello world 1234",
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 16,
+                               out_key,
+                               15,
+                               &out_key_len));
 exit:
   psa_reset_key_attributes(&attr);
   mbedtls_psa_crypto_free();
@@ -287,6 +306,34 @@ void opaque_test_driver_invalid_param()
                                                        out_key,
                                                        BUFSIZE,
                                                        NULL));
+  // Check validity of parameter set.
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_export_public_key(
+                               (uint8_t*)"OPQTDKHEADERHello world 1234",
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 16,
+                               out_key,
+                               BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_export_public_key(
+                               NULL,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 16,
+                               out_key,
+                               BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_export_public_key(
+                               (uint8_t*)"OPQTDKHEADERHello world 1234",
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 16,
+                               NULL,
+                               BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_export_public_key(
+                               (uint8_t*)"OPQTDKHEADERHello world 1234",
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 16,
+                               out_key,
+                               BUFSIZE,
+                               NULL));
 
 exit:
   psa_reset_key_attributes(&attr);
