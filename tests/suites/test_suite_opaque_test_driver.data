@@ -27,3 +27,9 @@ opaque_test_driver_export_public_key:"OPQTDKHEADERUryyb jbeyq 5678":"Hello world
 
 Opaque test driver - Export public key #2
 opaque_test_driver_export_public_key:"OPQTDKHEADERHello world 1234":"Uryyb jbeyq 1234"
+
+Opaque test driver - Sign & Verify hash #1
+opaque_test_driver_sign_verify:"ab45435712649cb30bbddac49197eebf2740ffc7f874d9244c3460f54f322d3a":"9ac4335b469bbd791439248504dd0d49c71349a295fee5a1c68507f45a9e1c7b"
+
+Opaque test driver - Sign & Verify hash #2
+opaque_test_driver_sign_verify:"4F505154444B484541444552ab45435712649cb30bbddac49197eebf2740ffc7f874d9244c3460f54f322d3a":"9ac4335b469bbd791439248504dd0d49c71349a295fee5a1c68507f45a9e1c7b"

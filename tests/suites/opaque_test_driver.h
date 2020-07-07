@@ -10,9 +10,9 @@ psa_status_t opaque_test_driver_export_public_key(const uint8_t *in,
                                                   size_t        *out_length);
 
 psa_status_t opaque_test_driver_generate_key(const psa_key_attributes_t *attributes,
-                                             uint8_t                    *data,
-                                             size_t                     data_size,
-                                             size_t                     *data_length);
+                                             uint8_t                    *key,
+                                             size_t                     key_size,
+                                             size_t                     *key_length);
 
 psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attributes,
                                            const uint8_t              *in,
@@ -20,3 +20,13 @@ psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attribute
                                            uint8_t                    *out,
                                            size_t                     out_size,
                                            size_t                     *out_length);
+
+psa_status_t opaque_test_driver_sign_hash(const psa_key_attributes_t *attributes,
+                                          const uint8_t              *key,
+                                          size_t                     key_length,
+                                          psa_algorithm_t            alg,
+                                          const uint8_t              *hash,
+                                          size_t                     hash_length,
+                                          uint8_t                    *signature,
+                                          size_t                     signature_size,
+                                          size_t                     *signature_length);

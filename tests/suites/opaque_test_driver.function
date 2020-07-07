@@ -45,6 +45,53 @@ psa_status_t opaque_test_driver_export_public_key(const uint8_t *in,
   return PSA_SUCCESS;
 }
 
+psa_status_t opaque_test_driver_generate_key(const psa_key_attributes_t *attributes,
+                                             uint8_t                    *key,
+                                             size_t                     key_size,
+                                             size_t                     *key_length)
+{
+  uint8_t key_buffer[32];
+  size_t key_buffer_length;
+  psa_status_t status;
+
+  OPQTD_VALIDATE_RET(attributes != NULL);
+  OPQTD_VALIDATE_RET(key        != NULL);
+  OPQTD_VALIDATE_RET(key_length != NULL);
+
+  if (psa_get_key_bits(attributes) == 0) {
+    return PSA_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
+    return PSA_ERROR_NOT_SUPPORTED;
+  }
+
+  if ((psa_get_key_bits(attributes) != 128)          // AES-128
+      && (psa_get_key_bits(attributes) != 192)       // AES-192
+      && (psa_get_key_bits(attributes) != 256)) {    // AES-256
+    return PSA_ERROR_NOT_SUPPORTED;
+  }
+
+  if (OPAQUE_TEST_DRIVER_KEYHEADER_SIZE
+      + PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)) > key_size) {
+    return PSA_ERROR_BUFFER_TOO_SMALL;
+  }
+
+  // Generate key data.
+  key_buffer_length = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
+  status = psa_generate_random(key_buffer, key_buffer_length);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+
+  return opaque_test_driver_import_key(attributes,
+                                       key_buffer,
+                                       key_buffer_length,
+                                       key,
+                                       key_size,
+                                       key_length);
+}
+
 psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attributes,
                                            const uint8_t              *in,
                                            size_t                     in_length,
@@ -57,7 +104,9 @@ psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attribute
   OPQTD_VALIDATE_RET(out        != NULL);
   OPQTD_VALIDATE_RET(out_length != NULL);
 
-  if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
+  if ((psa_get_key_type(attributes) != PSA_KEY_TYPE_AES)
+      && (psa_get_key_type(attributes)
+          != PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1))) {
     return PSA_ERROR_NOT_SUPPORTED;
   }
 
@@ -85,49 +134,50 @@ psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attribute
   return PSA_SUCCESS;
 }
 
-psa_status_t opaque_test_driver_generate_key(const psa_key_attributes_t *attributes,
-                                             uint8_t                    *data,
-                                             size_t                     data_size,
-                                             size_t                     *data_length)
+psa_status_t opaque_test_driver_sign_hash(const psa_key_attributes_t *attributes,
+                                          const uint8_t              *key,
+                                          size_t                     key_length,
+                                          psa_algorithm_t            alg,
+                                          const uint8_t              *hash,
+                                          size_t                     hash_length,
+                                          uint8_t                    *signature,
+                                          size_t                     signature_size,
+                                          size_t                     *signature_length)
 {
-  uint8_t key[32];
-  size_t key_length;
-  psa_status_t status;
+  uint8_t key_buffer[32];
+  size_t key_buffer_length;
+  psa_key_handle_t handle = 0;
+  psa_status_t status = PSA_SUCCESS;
 
-  OPQTD_VALIDATE_RET(attributes  != NULL);
-  OPQTD_VALIDATE_RET(data        != NULL);
-  OPQTD_VALIDATE_RET(data_length != NULL);
-
-  if (psa_get_key_bits(attributes) == 0) {
-    return PSA_ERROR_INVALID_ARGUMENT;
-  }
-
-  if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
-    return PSA_ERROR_NOT_SUPPORTED;
-  }
-
-  if ((psa_get_key_bits(attributes) != 128)          // AES-128
-      && (psa_get_key_bits(attributes) != 192)       // AES-192
-      && (psa_get_key_bits(attributes) != 256)) {    // AES-256
-    return PSA_ERROR_NOT_SUPPORTED;
-  }
-
-  if (OPAQUE_TEST_DRIVER_KEYHEADER_SIZE
-      + PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)) > data_size) {
-    return PSA_ERROR_BUFFER_TOO_SMALL;
-  }
-
-  // Generate key data.
-  key_length = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
-  status = psa_generate_random(key, key_length);
+  mbedtls_fprintf(stdout, "-- 1\n");
+  status = opaque_test_driver_export_public_key(key,
+                                                key_length,
+                                                key_buffer,
+                                                32,
+                                                &key_buffer_length);
   if (status != PSA_SUCCESS) {
     return status;
   }
 
-  return opaque_test_driver_import_key(attributes,
-                                       key,
-                                       key_length,
-                                       data,
-                                       data_size,
-                                       data_length);
+  mbedtls_fprintf(stdout, "-- 2\n");
+  status = psa_import_key(attributes, key_buffer, key_buffer_length, &handle);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+  mbedtls_fprintf(stdout, "-- 3, %ld\n", key_buffer_length);
+
+  status = psa_sign_hash(handle, alg, hash, hash_length,
+                         signature, signature_size, signature_length);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+  mbedtls_fprintf(stdout, "-- 4, %lu\n", *signature_length);
+
+  status = psa_destroy_key(handle);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+  mbedtls_fprintf(stdout, "-- 5\n");
+
+  return status;
 }
