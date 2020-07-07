@@ -144,40 +144,83 @@ psa_status_t opaque_test_driver_sign_hash(const psa_key_attributes_t *attributes
                                           size_t                     signature_size,
                                           size_t                     *signature_length)
 {
-  uint8_t key_buffer[32];
+  #define OPQ_BUFSIZE 64
+  uint8_t key_buffer[OPQ_BUFSIZE];
   size_t key_buffer_length;
   psa_key_handle_t handle = 0;
   psa_status_t status = PSA_SUCCESS;
 
-  mbedtls_fprintf(stdout, "-- 1\n");
   status = opaque_test_driver_export_public_key(key,
                                                 key_length,
                                                 key_buffer,
-                                                32,
+                                                OPQ_BUFSIZE,
                                                 &key_buffer_length);
   if (status != PSA_SUCCESS) {
     return status;
   }
 
-  mbedtls_fprintf(stdout, "-- 2\n");
   status = psa_import_key(attributes, key_buffer, key_buffer_length, &handle);
   if (status != PSA_SUCCESS) {
     return status;
   }
-  mbedtls_fprintf(stdout, "-- 3, %ld\n", key_buffer_length);
 
   status = psa_sign_hash(handle, alg, hash, hash_length,
                          signature, signature_size, signature_length);
   if (status != PSA_SUCCESS) {
+    psa_destroy_key(handle);
     return status;
   }
-  mbedtls_fprintf(stdout, "-- 4, %lu\n", *signature_length);
 
   status = psa_destroy_key(handle);
   if (status != PSA_SUCCESS) {
     return status;
   }
-  mbedtls_fprintf(stdout, "-- 5\n");
 
   return status;
+  #undef OPQ_BUFSIZE
+}
+
+psa_status_t opaque_test_driver_verify_hash(const psa_key_attributes_t *attributes,
+                                            const uint8_t              *key,
+                                            size_t                     key_length,
+                                            psa_algorithm_t            alg,
+                                            const uint8_t              *hash,
+                                            size_t                     hash_length,
+                                            const uint8_t              *signature,
+                                            size_t                     signature_length)
+{
+  #define OPQ_BUFSIZE 64
+  uint8_t key_buffer[OPQ_BUFSIZE];
+  size_t key_buffer_length;
+  psa_key_handle_t handle = 0;
+  psa_status_t status = PSA_SUCCESS;
+
+  status = opaque_test_driver_export_public_key(key,
+                                                key_length,
+                                                key_buffer,
+                                                OPQ_BUFSIZE,
+                                                &key_buffer_length);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+
+  status = psa_import_key(attributes, key_buffer, key_buffer_length, &handle);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+
+  status = psa_verify_hash(handle, alg, hash, hash_length,
+                           signature, signature_length);
+  if (status != PSA_SUCCESS) {
+    psa_destroy_key(handle);
+    return status;
+  }
+
+  status = psa_destroy_key(handle);
+  if (status != PSA_SUCCESS) {
+    return status;
+  }
+
+  return status;
+  #undef OPQ_BUFSIZE
 }

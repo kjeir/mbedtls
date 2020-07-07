@@ -362,8 +362,8 @@ void opaque_test_driver_sign_verify( data_t *key_data,
 {
   size_t key_bits;
   uint8_t sign[100];
-  size_t signature_size;
-  size_t signature_length = 0;
+  size_t sign_size;
+  size_t sign_length = 0;
   psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 
   TEST_ASSERT(PSA_SUCCESS == psa_crypto_init());
@@ -373,54 +373,64 @@ void opaque_test_driver_sign_verify( data_t *key_data,
   psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1));
   psa_set_key_bits(&attr, PSA_BYTES_TO_BITS(key_data->len - OPAQUE_TEST_DRIVER_KEYHEADER_SIZE));
 
+  // Sign the data with the given key.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_sign_hash(&attr,
                                                           key_data->x,
                                                           key_data->len,
-                                                          PSA_ALG_ECDSA( PSA_ALG_SHA_256 ),
+                                                          PSA_ALG_ECDSA(PSA_ALG_SHA_256),
                                                           input_data->x,
                                                           input_data->len,
                                                           sign,
                                                           100,
-                                                          &signature_length));
+                                                          &sign_length));
 
   key_bits = psa_get_key_bits(&attr);
-  signature_size = PSA_SIGN_OUTPUT_SIZE(PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1),
-                                        key_bits,
-                                        PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+  sign_size = PSA_SIGN_OUTPUT_SIZE(PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1),
+                                   key_bits,
+                                   PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 
-  mbedtls_fprintf(stdout, "Key attribs,     key-bits:%lu, sign-size:%lu, sign-len:%lu",
-                  key_bits, signature_size, signature_length);
+  mbedtls_fprintf(stdout, "\nKey attribs,     key-bits:%lu, sign-size:%lu, sign-len:%lu",
+                  key_bits, sign_size, sign_length);
 
-  TEST_ASSERT(signature_size != 0);
-  TEST_ASSERT(signature_size <= PSA_SIGNATURE_MAX_SIZE);
-  TEST_ASSERT(signature_size <= 100);
+  TEST_ASSERT(sign_size != 0);
+  TEST_ASSERT(sign_size <= PSA_SIGNATURE_MAX_SIZE);
+  TEST_ASSERT(sign_size <= 100);
 
   // Check that the signature length looks sensible.
-  TEST_ASSERT(signature_length <= signature_size);
-  TEST_ASSERT(signature_length > 0);
+  TEST_ASSERT(sign_length <= sign_size);
+  TEST_ASSERT(sign_length > 0);
 
-  mbedtls_fprintf(stdout, "\nSignature,       len:%lu data:", signature_length);
-  for (unsigned i = 0; i < signature_length; i++) {
+  mbedtls_fprintf(stdout, "\nSignature,       len:%lu data:", sign_length);
+  for (unsigned i = 0; i < sign_length; i++) {
     mbedtls_fprintf(stdout, "%02X ", sign[i]);
   }
   mbedtls_fprintf(stdout, "\n");
 
-    // /* Use the library to verify that the signature is correct. */
-    // PSA_ASSERT( psa_verify_hash( handle, PSA_ALG_ECDSA( PSA_ALG_SHA_256 ),
-    //                              input_data->x, input_data->len,
-    //                              sign, signature_length ) );
-    //
-    // if( input_data->len != 0 )
-    // {
-    //     /* Flip a bit in the input and verify that the signature is now
-    //      * detected as invalid. Flip a bit at the beginning, not at the end,
-    //      * because ECDSA may ignore the last few bits of the input. */
-    //     input_data->x[0] ^= 1;
-    //     TEST_EQUAL( psa_verify_hash( handle, PSA_ALG_ECDSA( PSA_ALG_SHA_256 ),
-    //                                  input_data->x, input_data->len,
-    //                                  sign, signature_length ),
-    //                 PSA_ERROR_INVALID_SIGNATURE );
-    // }
+  // Verify that the signature is correct.
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_verify_hash(&attr,
+                                                            key_data->x,
+                                                            key_data->len,
+                                                            PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                                                            input_data->x,
+                                                            input_data->len,
+                                                            sign,
+                                                            sign_length));
+
+  if (input_data->len != 0) {
+    /* Flip a bit in the input and verify that the signature is now
+     * detected as invalid. Flip a bit at the beginning, not at the end,
+     * because ECDSA may ignore the last few bits of the input. */
+    input_data->x[0] ^= 1;
+    TEST_ASSERT(PSA_ERROR_INVALID_SIGNATURE == opaque_test_driver_verify_hash(
+                                                 &attr,
+                                                 key_data->x,
+                                                 key_data->len,
+                                                 PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                                                 input_data->x,
+                                                 input_data->len,
+                                                 sign,
+                                                 sign_length));
+  }
 
 exit:
   psa_reset_key_attributes(&attr);

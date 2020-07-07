@@ -30,3 +30,12 @@ psa_status_t opaque_test_driver_sign_hash(const psa_key_attributes_t *attributes
                                           uint8_t                    *signature,
                                           size_t                     signature_size,
                                           size_t                     *signature_length);
+
+psa_status_t opaque_test_driver_verify_hash(const psa_key_attributes_t *attributes,
+                                            const uint8_t              *key,
+                                            size_t                     key_length,
+                                            psa_algorithm_t            alg,
+                                            const uint8_t              *hash,
+                                            size_t                     hash_length,
+                                            const uint8_t              *signature,
+                                            size_t                     signature_length);
