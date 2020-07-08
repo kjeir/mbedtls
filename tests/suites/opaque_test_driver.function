@@ -211,10 +211,10 @@ psa_status_t opaque_test_driver_verify_hash(const psa_key_attributes_t *attribut
   uint8_t key_buffer[OPQ_BUFSIZE];
   psa_status_t status = PSA_SUCCESS;
 
-  OPQTD_VALIDATE_RET(attributes       != NULL);
-  OPQTD_VALIDATE_RET(key              != NULL);
-  OPQTD_VALIDATE_RET(hash             != NULL);
-  OPQTD_VALIDATE_RET(signature        != NULL);
+  OPQTD_VALIDATE_RET(attributes != NULL);
+  OPQTD_VALIDATE_RET(key        != NULL);
+  OPQTD_VALIDATE_RET(hash       != NULL);
+  OPQTD_VALIDATE_RET(signature  != NULL);
 
   if (key_length <= OPAQUE_TEST_DRIVER_KEYHEADER_SIZE) {
     return PSA_ERROR_INVALID_ARGUMENT;
