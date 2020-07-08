@@ -5,7 +5,7 @@
 /* BEGIN_CASE */
 void opaque_test_driver_bad_param()
 {
-  #define OPQ_BUFSIZE (16U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
+  #define OPQ_BUFSIZE (64U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
   size_t out_key_len;
   uint8_t in_key[16];
   psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -23,22 +23,22 @@ void opaque_test_driver_bad_param()
                                                            out_key,
                                                            OPQ_BUFSIZE,
                                                            &out_key_len));
-  attr.core.type = PSA_KEY_TYPE_ARC4;
+  psa_set_key_type(&attr, PSA_KEY_TYPE_ARC4);
   TEST_ASSERT(PSA_ERROR_NOT_SUPPORTED == opaque_test_driver_import_key(&attr,
                                                            in_key,
                                                            16,
                                                            out_key,
                                                            OPQ_BUFSIZE,
                                                            &out_key_len));
-  attr.core.type = PSA_KEY_TYPE_AES;
-  attr.core.bits = 129;
+  psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+  psa_set_key_bits(&attr, 129);
   TEST_ASSERT(PSA_ERROR_NOT_SUPPORTED == opaque_test_driver_import_key(&attr,
                                                            in_key,
                                                            16,
                                                            out_key,
                                                            OPQ_BUFSIZE,
                                                            &out_key_len));
-  attr.core.bits = 128;
+  psa_set_key_bits(&attr, 128);
   TEST_ASSERT(PSA_ERROR_INVALID_ARGUMENT == opaque_test_driver_import_key(&attr,
                                                            in_key,
                                                            17,
@@ -49,8 +49,9 @@ void opaque_test_driver_bad_param()
                                                            in_key,
                                                            16,
                                                            out_key,
-                                                           OPQ_BUFSIZE - 1,
+                                                           27,
                                                            &out_key_len));
+
   // Check validity of parameter set.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_generate_key(&attr,
                                                            out_key,
@@ -62,22 +63,23 @@ void opaque_test_driver_bad_param()
                                                            OPQ_BUFSIZE,
                                                            &out_key_len));
   psa_set_key_bits(&attr, 128);
-  attr.core.type = PSA_KEY_TYPE_ARC4;
+  psa_set_key_type(&attr, PSA_KEY_TYPE_ARC4);
   TEST_ASSERT(PSA_ERROR_NOT_SUPPORTED == opaque_test_driver_generate_key(&attr,
                                                            out_key,
                                                            OPQ_BUFSIZE,
                                                            &out_key_len));
-  attr.core.type = PSA_KEY_TYPE_AES;
+  psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
   TEST_ASSERT(PSA_ERROR_BUFFER_TOO_SMALL == opaque_test_driver_generate_key(&attr,
                                                            out_key,
-                                                           OPQ_BUFSIZE - 1,
+                                                           27,
                                                            &out_key_len));
-  attr.core.bits = 129;
+  psa_set_key_bits(&attr, 129);
   TEST_ASSERT(PSA_ERROR_NOT_SUPPORTED == opaque_test_driver_generate_key(&attr,
                                                            out_key,
                                                            OPQ_BUFSIZE,
                                                            &out_key_len));
-  attr.core.bits = 128;
+  psa_set_key_bits(&attr, 128);
+
   // Check validity of parameter set.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_export_public_key(
                                (uint8_t*)"OPQTDKHEADERHello world 1234",
@@ -97,6 +99,48 @@ void opaque_test_driver_bad_param()
                                out_key,
                                15,
                                &out_key_len));
+
+  // Check validity of parameter set.
+  psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_VERIFY_HASH);
+  psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+  psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1));
+  psa_set_key_bits(&attr, 256);
+  const uint8_t key[] = {
+    0x4F, 0x50, 0x51, 0x54, 0x44, 0x4B, 0x48, 0x45, 0x41, 0x44, 0x45, 0x52,
+    0xab, 0x45, 0x43, 0x57, 0x12, 0x64, 0x9c, 0xb3, 0x0b, 0xbd, 0xda, 0xc4, 0x91, 0x97, 0xee, 0xbf,
+    0x27, 0x40, 0xff, 0xc7, 0xf8, 0x74, 0xd9, 0x24, 0x4c, 0x34, 0x60, 0xf5, 0x4f, 0x32, 0x2d, 0x3a
+  };
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_sign_hash(
+                               &attr,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
+                               out_key,
+                               OPQ_BUFSIZE,
+                               &out_key_len));
+  TEST_ASSERT(PSA_ERROR_INVALID_ARGUMENT == opaque_test_driver_sign_hash(
+                               &attr,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
+                               out_key,
+                               OPQ_BUFSIZE,
+                               &out_key_len));
+  TEST_ASSERT(PSA_ERROR_BUFFER_TOO_SMALL == opaque_test_driver_sign_hash(
+                               &attr,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
+                               out_key,
+                               63,
+                               &out_key_len));
+
 exit:
   psa_reset_key_attributes(&attr);
   mbedtls_psa_crypto_free();
@@ -239,7 +283,7 @@ exit:
 /* BEGIN_CASE depends_on:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
 void opaque_test_driver_invalid_param()
 {
-  #define OPQ_BUFSIZE (16U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
+  #define OPQ_BUFSIZE (64U + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE)
   size_t out_key_len;
   uint8_t in_key[16];
   psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -285,6 +329,7 @@ void opaque_test_driver_invalid_param()
                                                        out_key,
                                                        OPQ_BUFSIZE,
                                                        NULL));
+
   // Check validity of parameter set.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_generate_key(&attr,
                                                        out_key,
@@ -305,6 +350,7 @@ void opaque_test_driver_invalid_param()
                                                        out_key,
                                                        OPQ_BUFSIZE,
                                                        NULL));
+
   // Check validity of parameter set.
   TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_export_public_key(
                                (uint8_t*)"OPQTDKHEADERHello world 1234",
@@ -330,6 +376,82 @@ void opaque_test_driver_invalid_param()
                          opaque_test_driver_export_public_key(
                                (uint8_t*)"OPQTDKHEADERHello world 1234",
                                OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 16,
+                               out_key,
+                               OPQ_BUFSIZE,
+                               NULL));
+
+  // Check validity of parameter set.
+  psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_VERIFY_HASH);
+  psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+  psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1));
+  psa_set_key_bits(&attr, 256);
+  const uint8_t key[] = {
+    0x4F, 0x50, 0x51, 0x54, 0x44, 0x4B, 0x48, 0x45, 0x41, 0x44, 0x45, 0x52,
+    0xab, 0x45, 0x43, 0x57, 0x12, 0x64, 0x9c, 0xb3, 0x0b, 0xbd, 0xda, 0xc4, 0x91, 0x97, 0xee, 0xbf,
+    0x27, 0x40, 0xff, 0xc7, 0xf8, 0x74, 0xd9, 0x24, 0x4c, 0x34, 0x60, 0xf5, 0x4f, 0x32, 0x2d, 0x3a
+  };
+  TEST_ASSERT(PSA_SUCCESS == opaque_test_driver_sign_hash(
+                               &attr,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
+                               out_key,
+                               OPQ_BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_sign_hash(
+                               NULL,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
+                               out_key,
+                               OPQ_BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_sign_hash(
+                               &attr,
+                               NULL,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
+                               out_key,
+                               OPQ_BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_sign_hash(
+                               &attr,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               NULL,
+                               16,
+                               out_key,
+                               OPQ_BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_sign_hash(
+                               &attr,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
+                               NULL,
+                               OPQ_BUFSIZE,
+                               &out_key_len));
+  TEST_INVALID_PARAM_RET(PSA_ERROR_INVALID_ARGUMENT,
+                         opaque_test_driver_sign_hash(
+                               &attr,
+                               key,
+                               OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + 32,
+                               PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                               in_key,
+                               16,
                                out_key,
                                OPQ_BUFSIZE,
                                NULL));
