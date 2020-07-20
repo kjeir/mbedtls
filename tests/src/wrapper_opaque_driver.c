@@ -21,11 +21,11 @@ static void rot13(const uint8_t *in, size_t len, uint8_t *out)
   }
 }
 
-psa_status_t opaque_test_driver_export_public_key(const uint8_t *in,
-                                                  size_t        in_length,
-                                                  uint8_t       *out,
-                                                  size_t        out_size,
-                                                  size_t        *out_length)
+psa_status_t opaque_driver_export_public_key(const uint8_t *in,
+                                             size_t        in_length,
+                                             uint8_t       *out,
+                                             size_t        out_size,
+                                             size_t        *out_length)
 {
   OPQTD_VALIDATE_RET(in         != NULL);
   OPQTD_VALIDATE_RET(out        != NULL);
@@ -45,10 +45,10 @@ psa_status_t opaque_test_driver_export_public_key(const uint8_t *in,
   return PSA_SUCCESS;
 }
 
-psa_status_t opaque_test_driver_generate_key(const psa_key_attributes_t *attributes,
-                                             uint8_t                    *key,
-                                             size_t                     key_size,
-                                             size_t                     *key_length)
+psa_status_t opaque_driver_generate_key(const psa_key_attributes_t *attributes,
+                                        uint8_t                    *key,
+                                        size_t                     key_size,
+                                        size_t                     *key_length)
 {
   psa_status_t status;
   uint8_t key_buffer[32];
@@ -84,20 +84,20 @@ psa_status_t opaque_test_driver_generate_key(const psa_key_attributes_t *attribu
     return status;
   }
 
-  return opaque_test_driver_import_key(attributes,
-                                       key_buffer,
-                                       key_buffer_length,
-                                       key,
-                                       key_size,
-                                       key_length);
+  return opaque_driver_import_key(attributes,
+                                  key_buffer,
+                                  key_buffer_length,
+                                  key,
+                                  key_size,
+                                  key_length);
 }
 
-psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attributes,
-                                           const uint8_t              *in,
-                                           size_t                     in_length,
-                                           uint8_t                    *out,
-                                           size_t                     out_size,
-                                           size_t                     *out_length)
+psa_status_t opaque_driver_import_key(const psa_key_attributes_t *attributes,
+                                      const uint8_t              *in,
+                                      size_t                     in_length,
+                                      uint8_t                    *out,
+                                      size_t                     out_size,
+                                      size_t                     *out_length)
 {
   OPQTD_VALIDATE_RET(attributes != NULL);
   OPQTD_VALIDATE_RET(in         != NULL);
@@ -134,15 +134,15 @@ psa_status_t opaque_test_driver_import_key(const psa_key_attributes_t *attribute
   return PSA_SUCCESS;
 }
 
-psa_status_t opaque_test_driver_sign_hash(const psa_key_attributes_t *attributes,
-                                          const uint8_t              *key,
-                                          size_t                     key_length,
-                                          psa_algorithm_t            alg,
-                                          const uint8_t              *hash,
-                                          size_t                     hash_length,
-                                          uint8_t                    *signature,
-                                          size_t                     signature_size,
-                                          size_t                     *signature_length)
+psa_status_t opaque_driver_sign_hash(const psa_key_attributes_t *attributes,
+                                     const uint8_t              *key,
+                                     size_t                     key_length,
+                                     psa_algorithm_t            alg,
+                                     const uint8_t              *hash,
+                                     size_t                     hash_length,
+                                     uint8_t                    *signature,
+                                     size_t                     signature_size,
+                                     size_t                     *signature_length)
 {
   #define OPQ_BUFSIZE 64
   size_t key_buffer_length;
@@ -160,11 +160,11 @@ psa_status_t opaque_test_driver_sign_hash(const psa_key_attributes_t *attributes
     return PSA_ERROR_INVALID_ARGUMENT;
   }
 
-  status = opaque_test_driver_export_public_key(key,
-                                                key_length,
-                                                key_buffer,
-                                                OPQ_BUFSIZE,
-                                                &key_buffer_length);
+  status = opaque_driver_export_public_key(key,
+                                           key_length,
+                                           key_buffer,
+                                           OPQ_BUFSIZE,
+                                           &key_buffer_length);
   if (status != PSA_SUCCESS) {
     return status;
   }
@@ -196,14 +196,14 @@ psa_status_t opaque_test_driver_sign_hash(const psa_key_attributes_t *attributes
   #undef OPQ_BUFSIZE
 }
 
-psa_status_t opaque_test_driver_verify_hash(const psa_key_attributes_t *attributes,
-                                            const uint8_t              *key,
-                                            size_t                     key_length,
-                                            psa_algorithm_t            alg,
-                                            const uint8_t              *hash,
-                                            size_t                     hash_length,
-                                            const uint8_t              *signature,
-                                            size_t                     signature_length)
+psa_status_t opaque_driver_verify_hash(const psa_key_attributes_t *attributes,
+                                       const uint8_t              *key,
+                                       size_t                     key_length,
+                                       psa_algorithm_t            alg,
+                                       const uint8_t              *hash,
+                                       size_t                     hash_length,
+                                       const uint8_t              *signature,
+                                       size_t                     signature_length)
 {
   #define OPQ_BUFSIZE 64
   size_t key_buffer_length;
@@ -220,11 +220,11 @@ psa_status_t opaque_test_driver_verify_hash(const psa_key_attributes_t *attribut
     return PSA_ERROR_INVALID_ARGUMENT;
   }
 
-  status = opaque_test_driver_export_public_key(key,
-                                                key_length,
-                                                key_buffer,
-                                                OPQ_BUFSIZE,
-                                                &key_buffer_length);
+  status = opaque_driver_export_public_key(key,
+                                           key_length,
+                                           key_buffer,
+                                           OPQ_BUFSIZE,
+                                           &key_buffer_length);
   if (status != PSA_SUCCESS) {
     return status;
   }
