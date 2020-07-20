@@ -1,5 +1,6 @@
 /* BEGIN_HEADER */
-#include "suites/opaque_test_driver.function"
+#include "wrapper_opaque_driver.h"
+#include <ctype.h>
 /* END_HEADER */
 
 /* BEGIN_CASE */

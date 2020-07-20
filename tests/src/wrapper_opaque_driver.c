@@ -1,4 +1,4 @@
-#include "opaque_test_driver.h"
+#include "wrapper_opaque_driver.h"
 
 #include <string.h>
 #include <ctype.h>
