@@ -346,6 +346,8 @@
  */
 //#define MBEDTLS_TIMING_ALT
 
+//#define MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C
+
 /**
  * \def MBEDTLS_AES_ALT
  *
