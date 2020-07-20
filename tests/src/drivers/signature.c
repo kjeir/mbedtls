@@ -34,6 +34,8 @@
 #include "mbedtls/md.h"
 #include "mbedtls/ecdsa.h"
 
+#include "test/random.h"
+
 #include <string.h>
 
 /* If non-null, on success, copy this to the output. */
@@ -222,6 +224,8 @@ psa_status_t test_transparent_signature_verify_hash(
     mbedtls_mpi_init( &s );
     mbedtls_ecp_keypair ecp;
     mbedtls_ecp_keypair_init( &ecp );
+    mbedtls_test_rnd_pseudo_info rnd_info;
+    memset( &rnd_info, 0x5A, sizeof( mbedtls_test_rnd_pseudo_info ) );
     size_t curve_bytes = PSA_BITS_TO_BYTES( ecp.grp.pbits );
 
     MBEDTLS_MPI_CHK( mbedtls_ecp_group_load( &ecp.grp, grp_id ) );
@@ -248,7 +252,8 @@ psa_status_t test_transparent_signature_verify_hash(
         MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &ecp.d, key, key_length ) );
         MBEDTLS_MPI_CHK(
             mbedtls_ecp_mul( &ecp.grp, &ecp.Q, &ecp.d, &ecp.grp.G,
-                             NULL, NULL ) );
+                             &mbedtls_test_rnd_pseudo_rand,
+                             &rnd_info ) );
     }
 
     MBEDTLS_MPI_CHK( mbedtls_ecdsa_verify( &ecp.grp, hash, hash_length,
