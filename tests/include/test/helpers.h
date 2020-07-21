@@ -51,6 +51,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C)
+// Enable opaque driver test suite.
+#define MBEDTLS_TEST_OPAQUE_DRIVER
+#endif
+
 int mbedtls_test_platform_setup( void );
 void mbedtls_test_platform_teardown( void );
 
