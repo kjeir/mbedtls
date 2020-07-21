@@ -3,6 +3,11 @@
 #include <ctype.h>
 /* END_HEADER */
 
+/* BEGIN_DEPENDENCIES
+ * depends_on:MBEDTLS_TEST_OPAQUE_DRIVER
+ * END_DEPENDENCIES
+ */
+
 /* BEGIN_CASE */
 void opaque_driver_bad_param()
 {

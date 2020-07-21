@@ -347,19 +347,6 @@
 //#define MBEDTLS_TIMING_ALT
 
 /**
- * \def MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C
- *
- * Uncomment to provide your own alternate implementation for mbedtls_timing_hardclock(),
- * mbedtls_timing_get_timer(), mbedtls_set_alarm(), mbedtls_set/get_delay()
- *
- * Only works if you have MBEDTLS_TIMING_C enabled.
- *
- * You will need to provide a header "timing_alt.h" and an implementation at
- * compile time.
- */
-//#define MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C
-
-/**
  * \def MBEDTLS_AES_ALT
  *
  * MBEDTLS__MODULE_NAME__ALT: Uncomment a macro to let mbed TLS use your

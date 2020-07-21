@@ -1,5 +1,7 @@
 #include "wrapper_opaque_driver.h"
 
+#if defined(MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C)
+
 #include <string.h>
 #include <ctype.h>
 
@@ -249,3 +251,5 @@ psa_status_t opaque_driver_verify_hash(const psa_key_attributes_t *attributes,
   return status;
   #undef OPQ_BUFSIZE
 }
+
+#endif // defined(MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C)
