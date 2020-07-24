@@ -232,13 +232,9 @@
     <ClInclude Include="..\..\include\psa\crypto_struct.h" />
     <ClInclude Include="..\..\include\psa\crypto_types.h" />
     <ClInclude Include="..\..\include\psa\crypto_values.h" />
-    <ClInclude Include="..\..\tests\include\test\helpers.h" />
-    <ClInclude Include="..\..\tests\include\test\macros.h" />
-    <ClInclude Include="..\..\tests\include\test\psa_crypto_helpers.h" />
-    <ClInclude Include="..\..\tests\include\test\psa_helpers.h" />
-    <ClInclude Include="..\..\tests\include\test\random.h" />
     <ClInclude Include="..\..\library\common.h" />
     <ClInclude Include="..\..\library\psa_crypto_core.h" />
+    <ClInclude Include="..\..\library\psa_crypto_driver_wrappers.h" />
     <ClInclude Include="..\..\library\psa_crypto_invasive.h" />
     <ClInclude Include="..\..\library\psa_crypto_its.h" />
     <ClInclude Include="..\..\library\psa_crypto_se.h" />
