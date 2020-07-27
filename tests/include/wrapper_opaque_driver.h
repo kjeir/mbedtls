@@ -53,11 +53,11 @@
  * \retval #PSA_ERROR_BUFFER_TOO_SMALL
  *         The size of the \p out data buffer is too small.
  */
-psa_status_t opaque_driver_export_public_key(const uint8_t *in,
-                                             size_t        in_length,
-                                             uint8_t       *out,
-                                             size_t        out_size,
-                                             size_t        *out_length);
+psa_status_t opaque_driver_export_public_key( const uint8_t *in,
+                                              size_t in_length,
+                                              uint8_t *out,
+                                              size_t out_size,
+                                              size_t *out_length );
 
 /**
  * \brief Generate an opaque key.
@@ -76,10 +76,10 @@ psa_status_t opaque_driver_export_public_key(const uint8_t *in,
  * \retval #PSA_ERROR_BUFFER_TOO_SMALL
  *         The size of the \p key data buffer is too small.
  */
-psa_status_t opaque_driver_generate_key(const psa_key_attributes_t *attributes,
-                                        uint8_t                    *key,
-                                        size_t                     key_size,
-                                        size_t                     *key_length);
+psa_status_t opaque_driver_generate_key( const psa_key_attributes_t *attributes,
+                                         uint8_t *key,
+                                         size_t key_size,
+                                         size_t *key_length );
 
 /**
  * \brief Import a key and create an opaque key.
@@ -100,12 +100,12 @@ psa_status_t opaque_driver_generate_key(const psa_key_attributes_t *attributes,
  * \retval #PSA_ERROR_BUFFER_TOO_SMALL
  *         The size of the \p out data buffer is too small.
  */
-psa_status_t opaque_driver_import_key(const psa_key_attributes_t *attributes,
-                                      const uint8_t              *in,
-                                      size_t                     in_length,
-                                      uint8_t                    *out,
-                                      size_t                     out_size,
-                                      size_t                     *out_length);
+psa_status_t opaque_driver_import_key( const psa_key_attributes_t *attributes,
+                                       const uint8_t *in,
+                                       size_t in_length,
+                                       uint8_t *out,
+                                       size_t out_size,
+                                       size_t *out_length );
 
 /**
  * \brief Sign a hash or short message with an opaque key.
@@ -128,15 +128,15 @@ psa_status_t opaque_driver_import_key(const psa_key_attributes_t *attributes,
  * \retval #PSA_ERROR_BUFFER_TOO_SMALL
  *         The size of the \p signature buffer is too small.
  */
-psa_status_t opaque_driver_sign_hash(const psa_key_attributes_t *attributes,
-                                     const uint8_t              *key,
-                                     size_t                     key_length,
-                                     psa_algorithm_t            alg,
-                                     const uint8_t              *hash,
-                                     size_t                     hash_length,
-                                     uint8_t                    *signature,
-                                     size_t                     signature_size,
-                                     size_t                     *signature_length);
+psa_status_t opaque_driver_sign_hash( const psa_key_attributes_t *attributes,
+                                      const uint8_t *key,
+                                      size_t key_length,
+                                      psa_algorithm_t alg,
+                                      const uint8_t *hash,
+                                      size_t hash_length,
+                                      uint8_t *signature,
+                                      size_t signature_size,
+                                      size_t *signature_length );
 
 /**
  * \brief Verify the signature of a hash or short message using an opqaue key.
@@ -155,14 +155,14 @@ psa_status_t opaque_driver_sign_hash(const psa_key_attributes_t *attributes,
  * \retval #PSA_ERROR_INVALID_ARGUMENT
  *         The \p in key is not recognized as an opaque key.
  */
-psa_status_t opaque_driver_verify_hash(const psa_key_attributes_t *attributes,
-                                       const uint8_t              *key,
-                                       size_t                     key_length,
-                                       psa_algorithm_t            alg,
-                                       const uint8_t              *hash,
-                                       size_t                     hash_length,
-                                       const uint8_t              *signature,
-                                       size_t                     signature_length);
+psa_status_t opaque_driver_verify_hash( const psa_key_attributes_t *attributes,
+                                        const uint8_t *key,
+                                        size_t key_length,
+                                        psa_algorithm_t alg,
+                                        const uint8_t *hash,
+                                        size_t hash_length,
+                                        const uint8_t *signature,
+                                        size_t signature_length );
 
-#endif // defined(MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C)
-#endif // #ifndef WRAPPER_OPAQUE_DRIVER_H
+#endif /* defined(MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C) */
+#endif /* #ifndef WRAPPER_OPAQUE_DRIVER_H */
