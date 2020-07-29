@@ -722,9 +722,9 @@ component_check_doxygen_warnings () {
 #### Build and test many configurations and targets
 ################################################################
 
-component_test_opaque_driver () {
-    msg "build+test: Opaque driver test" # ~ 40s
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -DMBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C' test
+component_test_opaque_test_driver () {
+    msg "build+test: Opaque test driver test" # ~ 40s
+    make CC=gcc CFLAGS='-Werror -Wall -Wextra -DMBEDTLS_OPAQUE_TEST_DRIVER_C' test
 }
 
 component_test_default_out_of_box () {
