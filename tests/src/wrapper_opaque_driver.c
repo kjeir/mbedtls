@@ -27,6 +27,8 @@
 
 #if defined(MBEDTLS_TEST_WRAPPER_OPAQUE_DRIVER_C)
 
+#include "test/random.h"
+#include "mbedtls/error.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -51,15 +53,20 @@ static void rot13( const uint8_t *in,
     }
 }
 
-psa_status_t opaque_driver_export_public_key( const uint8_t *in,
-                                              size_t in_length,
-                                              uint8_t *out,
-                                              size_t out_size,
-                                              size_t *out_length )
+psa_status_t opaque_driver_export_public_key(
+                                        const psa_key_attributes_t *attributes,
+                                        const uint8_t *in,
+                                        size_t in_length,
+                                        uint8_t *out,
+                                        size_t out_size,
+                                        size_t *out_length )
 {
+    OPQTD_VALIDATE_RET( attributes != NULL );
     OPQTD_VALIDATE_RET( in != NULL );
     OPQTD_VALIDATE_RET( out != NULL );
     OPQTD_VALIDATE_RET( out_length != NULL );
+
+    (void) attributes;
 
     if( in_length <= OPAQUE_DRIVER_KEYHEADER_SIZE )
         return( PSA_ERROR_INVALID_ARGUMENT );
@@ -102,10 +109,63 @@ psa_status_t opaque_driver_generate_key( const psa_key_attributes_t *attributes,
         return( PSA_ERROR_BUFFER_TOO_SMALL );
 
     /* Generate key data. */
-    key_buffer_length = PSA_BITS_TO_BYTES( psa_get_key_bits( attributes ) );
-    status = psa_generate_random( key_buffer, key_buffer_length );
-    if( status != PSA_SUCCESS )
+    if( PSA_KEY_TYPE_IS_UNSTRUCTURED( attributes->core.type ) )
+    {
+        key_buffer_length = PSA_BITS_TO_BYTES( psa_get_key_bits( attributes ) );
+        status = psa_generate_random( key_buffer, key_buffer_length );
+        if( status != PSA_SUCCESS )
+            return( status );
+    }
+    else
+#if defined(MBEDTLS_ECP_C)
+    if ( PSA_KEY_TYPE_IS_ECC( attributes->core.type ) && PSA_KEY_TYPE_IS_KEY_PAIR( attributes->core.type ) )
+    {
+        psa_ecc_family_t curve = PSA_KEY_TYPE_ECC_GET_FAMILY( attributes->core.type );
+        mbedtls_ecp_group_id grp_id =
+            mbedtls_ecc_group_of_psa( curve, PSA_BITS_TO_BYTES( attributes->core.bits ) );
+        const mbedtls_ecp_curve_info *curve_info =
+            mbedtls_ecp_curve_info_from_grp_id( grp_id );
+        mbedtls_ecp_keypair ecp;
+        mbedtls_test_rnd_pseudo_info rnd_info;
+        memset( &rnd_info, 0x5A, sizeof( mbedtls_test_rnd_pseudo_info ) );
+
+        int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+        if( attributes->domain_parameters_size != 0 )
+            return( PSA_ERROR_NOT_SUPPORTED );
+        if( grp_id == MBEDTLS_ECP_DP_NONE || curve_info == NULL )
+            return( PSA_ERROR_NOT_SUPPORTED );
+        if( curve_info->bit_size != attributes->core.bits )
+            return( PSA_ERROR_INVALID_ARGUMENT );
+        mbedtls_ecp_keypair_init( &ecp );
+        ret = mbedtls_ecp_gen_key( grp_id, &ecp,
+                                   &mbedtls_test_rnd_pseudo_rand,
+                                   &rnd_info );
+        if( ret != 0 )
+        {
+            mbedtls_ecp_keypair_free( &ecp );
+            return( mbedtls_to_psa_error( ret ) );
+        }
+
+        /* Make sure to use export representation */
+        size_t bytes = PSA_BITS_TO_BYTES( attributes->core.bits );
+        if( key_size < bytes )
+        {
+            mbedtls_ecp_keypair_free( &ecp );
+            return( PSA_ERROR_BUFFER_TOO_SMALL );
+        }
+        psa_status_t status = mbedtls_to_psa_error(
+            mbedtls_mpi_write_binary( &ecp.d, key, bytes ) );
+
+        if( status == PSA_SUCCESS )
+            *key_length = bytes;
+
+        mbedtls_ecp_keypair_free( &ecp );
         return( status );
+    }
+
+    else
+#endif /* MBEDTLS_ECP_C */
+        return( PSA_ERROR_NOT_SUPPORTED );
 
     return( opaque_driver_import_key( attributes,
                                       key_buffer,
@@ -178,7 +238,8 @@ psa_status_t opaque_driver_sign_hash( const psa_key_attributes_t *attributes,
     if( key_length <= OPAQUE_DRIVER_KEYHEADER_SIZE )
         return( PSA_ERROR_INVALID_ARGUMENT );
 
-    status = opaque_driver_export_public_key( key,
+    status = opaque_driver_export_public_key( attributes,
+                                              key,
                                               key_length,
                                               key_buffer,
                                               OPQ_BUFSIZE,
@@ -239,7 +300,8 @@ psa_status_t opaque_driver_verify_hash( const psa_key_attributes_t *attributes,
     if( key_length <= OPAQUE_DRIVER_KEYHEADER_SIZE )
         return( PSA_ERROR_INVALID_ARGUMENT );
 
-    status = opaque_driver_export_public_key( key,
+    status = opaque_driver_export_public_key( attributes,
+                                              key,
                                               key_length,
                                               key_buffer,
                                               OPQ_BUFSIZE,

@@ -40,6 +40,7 @@
  * The output of this function can be passed to opaque_driver_import_key() to
  * create an object that is equivalent to the public key.
  *
+ * \param[in]  attributes   The attributes for the key.
  * \param[in]  in           The opaque key to export.
  * \param[in]  in_length    The size of the opaque key.
  * \param[out] out          Buffer where the exported key data is to be written.
@@ -53,11 +54,13 @@
  * \retval #PSA_ERROR_BUFFER_TOO_SMALL
  *         The size of the \p out data buffer is too small.
  */
-psa_status_t opaque_driver_export_public_key( const uint8_t *in,
-                                              size_t in_length,
-                                              uint8_t *out,
-                                              size_t out_size,
-                                              size_t *out_length );
+psa_status_t opaque_driver_export_public_key(
+                                        const psa_key_attributes_t *attributes,
+                                        const uint8_t *in,
+                                        size_t in_length,
+                                        uint8_t *out,
+                                        size_t out_size,
+                                        size_t *out_length );
 
 /**
  * \brief Generate an opaque key.

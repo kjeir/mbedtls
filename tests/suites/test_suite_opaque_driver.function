@@ -90,18 +90,21 @@ void opaque_driver_bad_param( )
 
     /* Check validity of parameter set. */
     TEST_ASSERT( PSA_SUCCESS == opaque_driver_export_public_key(
+                                 &attr,
                                  (uint8_t *) "OPQTDKHEADERHello world 1234",
                                  OPAQUE_DRIVER_KEYHEADER_SIZE + 16,
                                  out_key,
                                  OPQ_BUFSIZE,
                                  &out_key_len ) );
     TEST_ASSERT( PSA_ERROR_INVALID_ARGUMENT == opaque_driver_export_public_key(
+                                 &attr,
                                  (uint8_t* ) "OPQTDKHEADERHello world 1234",
                                  OPAQUE_DRIVER_KEYHEADER_SIZE,
                                  out_key,
                                  OPQ_BUFSIZE,
                                  &out_key_len ) );
     TEST_ASSERT( PSA_ERROR_BUFFER_TOO_SMALL == opaque_driver_export_public_key(
+                                 &attr,
                                  (uint8_t *) "OPQTDKHEADERHello world 1234",
                                  OPAQUE_DRIVER_KEYHEADER_SIZE + 16,
                                  out_key,
@@ -184,6 +187,7 @@ exit:
 void opaque_driver_export_public_key( char *in, char *exp_out )
 {
     #define OPQ_BUFSIZE ( 32U + OPAQUE_DRIVER_KEYHEADER_SIZE )
+    psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 
     size_t out_len;
     uint8_t out[OPQ_BUFSIZE];
@@ -191,6 +195,7 @@ void opaque_driver_export_public_key( char *in, char *exp_out )
     TEST_ASSERT( PSA_SUCCESS == psa_crypto_init() );
 
     TEST_ASSERT( PSA_SUCCESS == opaque_driver_export_public_key(
+                                    &attr,
                                     (uint8_t *) in,
                                     strlen(in),
                                     out,
@@ -359,6 +364,7 @@ void opaque_driver_invalid_param( )
 
     /* Check validity of parameter set. */
     TEST_ASSERT( PSA_SUCCESS == opaque_driver_export_public_key(
+                                    &attr,
                                     (uint8_t *) "OPQTDKHEADERHello world 1234",
                                     OPAQUE_DRIVER_KEYHEADER_SIZE + 16,
                                     out_key,
@@ -367,12 +373,22 @@ void opaque_driver_invalid_param( )
     TEST_INVALID_PARAM_RET( PSA_ERROR_INVALID_ARGUMENT,
                             opaque_driver_export_public_key(
                                     NULL,
+                                    (uint8_t *) "OPQTDKHEADERHello world 1234",
                                     OPAQUE_DRIVER_KEYHEADER_SIZE + 16,
                                     out_key,
                                     OPQ_BUFSIZE,
                                     &out_key_len ) );
     TEST_INVALID_PARAM_RET( PSA_ERROR_INVALID_ARGUMENT,
                             opaque_driver_export_public_key(
+                                    &attr,
+                                    NULL,
+                                    OPAQUE_DRIVER_KEYHEADER_SIZE + 16,
+                                    out_key,
+                                    OPQ_BUFSIZE,
+                                    &out_key_len ) );
+    TEST_INVALID_PARAM_RET( PSA_ERROR_INVALID_ARGUMENT,
+                            opaque_driver_export_public_key(
+                                    &attr,
                                     (uint8_t *) "OPQTDKHEADERHello world 1234",
                                     OPAQUE_DRIVER_KEYHEADER_SIZE + 16,
                                     NULL,
@@ -380,6 +396,7 @@ void opaque_driver_invalid_param( )
                                     &out_key_len ) );
     TEST_INVALID_PARAM_RET( PSA_ERROR_INVALID_ARGUMENT,
                             opaque_driver_export_public_key(
+                                    &attr,
                                     (uint8_t *) "OPQTDKHEADERHello world 1234",
                                     OPAQUE_DRIVER_KEYHEADER_SIZE + 16,
                                     out_key,
