@@ -1243,6 +1243,15 @@ psa_status_t psa_destroy_key( psa_key_handle_t handle )
     if( status != PSA_SUCCESS )
         return( status );
 
+    /* Try available accelerators first. */
+    status = psa_driver_wrapper_destroy_key( slot, ... );
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+    {
+        if( status != PSA_SUCCESS )
+            overall_status = status;
+        goto exit;
+    }
+
 #if defined(MBEDTLS_PSA_CRYPTO_SE_C)
     driver = psa_get_se_driver_entry( slot->attr.lifetime );
     if( driver != NULL )
@@ -1650,6 +1659,9 @@ psa_status_t psa_export_public_key( psa_key_handle_t handle,
     status = psa_get_key_from_slot( handle, &slot, 0, 0 );
     if( status != PSA_SUCCESS )
         return( status );
+
+   /* Wrapper hook here ? ... or perhaps inside psa_internal_export_key() ? */
+
     return( psa_internal_export_key( slot, data, data_size,
                                      data_length, 1 ) );
 }
@@ -2066,6 +2078,12 @@ psa_status_t psa_import_key( const psa_key_attributes_t *attributes,
                                      handle, &slot, &driver );
     if( status != PSA_SUCCESS )
         goto exit;
+
+    /* Try available accelerators first. */
+    status = psa_driver_wrapper_import_key( slot, ... );
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        goto exit;
+
 
 #if defined(MBEDTLS_PSA_CRYPTO_SE_C)
     if( driver != NULL )
