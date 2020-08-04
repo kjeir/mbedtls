@@ -262,6 +262,7 @@ libmbedcrypto.dll: $(OBJS_CRYPTO)
 
 .c.o:
 	echo $(CFLAGS)
+	echo $(LDFLAGS)
 	echo "  CC    $<"
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 
