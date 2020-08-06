@@ -199,6 +199,7 @@ cleanup:
     //             mbedtls_ecp_point_read_binary( &ecp->grp, &ecp->Q,
     //                                            key,
     //                                            key_length ) );
+
     /* Load the secret value. */
     status = mbedtls_to_psa_error(
                  mbedtls_ecp_read_key( grp_id,

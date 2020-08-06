@@ -117,6 +117,13 @@ psa_status_t test_transparent_generate_key(
     return( PSA_ERROR_NOT_SUPPORTED );
 }
 
+psa_status_t test_opaque_destroy_key( void )
+{
+    /* Do something ... */
+    return( PSA_SUCCESS );
+}
+
+
 psa_status_t test_opaque_generate_key(
     const psa_key_attributes_t *attributes,
     uint8_t *key, size_t key_size, size_t *key_length )

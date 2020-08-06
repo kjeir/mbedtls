@@ -48,6 +48,8 @@ psa_status_t test_opaque_generate_key(
 #define OPAQUE_TEST_DRIVER_KEYHEADER "OPQTDKHEADER"
 #define OPAQUE_TEST_DRIVER_KEYHEADER_SIZE 12U
 
+psa_status_t test_opaque_destroy_key( void );
+
 psa_status_t test_opaque_import_key(
     const psa_key_attributes_t *attributes,
     const uint8_t *in,

@@ -1244,8 +1244,8 @@ psa_status_t psa_destroy_key( psa_key_handle_t handle )
         return( status );
 
     /* Try available accelerators first. */
-    mbedtls_fprintf( stdout, " | | Destroy-KEY\n" );
     status = psa_driver_wrapper_destroy_key( slot );  /// !!!!
+    mbedtls_fprintf( stdout, " | | Destroy-KEY %d\n", status );
     if( status != PSA_ERROR_NOT_SUPPORTED )
     {
         if( status != PSA_SUCCESS )
