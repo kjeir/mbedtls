@@ -1,5 +1,8 @@
 sign_hash through transparent driver: calculate in driver
-ecdsa_sign:PSA_SUCCESS:0:PSA_SUCCESS
+ecdsa_sign_transparent:PSA_SUCCESS:0:PSA_SUCCESS
+
+sign_hash through opaque driver: calculate in driver
+ecdsa_sign_opaque:PSA_SUCCESS:0:PSA_SUCCESS
 
 #sign_hash through transparent driver: fallback
 #ecdsa_sign:PSA_ERROR_NOT_SUPPORTED:0:PSA_SUCCESS

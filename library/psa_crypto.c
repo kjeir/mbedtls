@@ -3538,7 +3538,7 @@ static psa_status_t psa_rsa_verify( mbedtls_rsa_context *rsa,
 /* `ecp` cannot be const because `ecp->grp` needs to be non-const
  * for mbedtls_ecdsa_sign() and mbedtls_ecdsa_sign_det()
  * (even though these functions don't modify it). */
-static psa_status_t psa_ecdsa_sign( mbedtls_ecp_keypair *ecp,
+psa_status_t psa_ecdsa_sign( mbedtls_ecp_keypair *ecp,
                                     psa_algorithm_t alg,
                                     const uint8_t *hash,
                                     size_t hash_length,

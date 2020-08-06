@@ -50,6 +50,14 @@ unsigned long test_transparent_signature_sign_hash_hit = 0;
 psa_status_t test_transparent_signature_verify_hash_status = PSA_ERROR_NOT_SUPPORTED;
 unsigned long test_transparent_signature_verify_hash_hit = 0;
 
+psa_status_t psa_ecdsa_sign( mbedtls_ecp_keypair *ecp,
+                                    psa_algorithm_t alg,
+                                    const uint8_t *hash,
+                                    size_t hash_length,
+                                    uint8_t *signature,
+                                    size_t signature_size,
+                                    size_t *signature_length );
+
 psa_status_t test_transparent_signature_sign_hash(
     const psa_key_attributes_t *attributes,
     const uint8_t *key, size_t key_length,
@@ -76,6 +84,8 @@ psa_status_t test_transparent_signature_sign_hash(
 
 #if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECDSA_DETERMINISTIC) && \
     defined(MBEDTLS_SHA256_C)
+
+#if 0
     if( alg != PSA_ALG_DETERMINISTIC_ECDSA( PSA_ALG_SHA_256 ) )
         return( PSA_ERROR_NOT_SUPPORTED );
     mbedtls_fprintf( stdout, " | | | | Transp sign hash %X %ld\n",
@@ -123,7 +133,7 @@ psa_status_t test_transparent_signature_sign_hash(
     mbedtls_fprintf( stdout, " | | | | Transp sign hash 3\n" );
     MBEDTLS_MPI_CHK( mbedtls_ecp_point_read_binary( &ecp.grp, &ecp.Q,
                                                     key, key_length ) );
-        mbedtls_fprintf( stdout, " | | | | Transp sign hash 4\n" );
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 4\n" );
 
     /* Code adapted from psa_ecdsa_sign() in psa_crypto.c. */
     mbedtls_md_type_t md_alg = MBEDTLS_MD_SHA256;
@@ -132,11 +142,14 @@ psa_status_t test_transparent_signature_sign_hash(
         status = PSA_ERROR_BUFFER_TOO_SMALL;
         goto cleanup;
     }
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 5\n" );
     MBEDTLS_MPI_CHK( mbedtls_ecdsa_sign_det( &ecp.grp, &r, &s, &ecp.d,
-                                  hash, hash_length, md_alg ) );
+                                             hash, hash_length, md_alg ) );
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 6\n" );
     MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &r,
                                                signature,
                                                curve_bytes ) );
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 7\n" );
     MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &s,
                                                signature + curve_bytes,
                                                curve_bytes ) );
@@ -150,6 +163,63 @@ cleanup:
     mbedtls_ecp_keypair_free( &ecp );
     if( status == PSA_SUCCESS )
         *signature_length = 2 * curve_bytes;
+
+#else
+    (void) attributes;
+    (void) key;
+    (void) key_length;
+    mbedtls_ecp_keypair *ecp = NULL;
+    mbedtls_ecp_group_id grp_id;
+
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 1\n" );
+    //status = psa_load_ecp_representation( slot, &ecp );
+    ecp = mbedtls_calloc(1, sizeof(mbedtls_ecp_keypair));
+    if( ecp == NULL )
+        return PSA_ERROR_INSUFFICIENT_MEMORY;
+
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 2\n" );
+    mbedtls_ecp_keypair_init( ecp );
+
+    /* Load the group. */
+    grp_id = mbedtls_ecc_group_of_psa( PSA_KEY_TYPE_ECC_GET_FAMILY( attributes->core.type),
+                                       key_length );
+    if( grp_id == MBEDTLS_ECP_DP_NONE )
+        return( PSA_ERROR_INVALID_ARGUMENT );
+    status = mbedtls_to_psa_error(
+                mbedtls_ecp_group_load( &ecp->grp, grp_id ) );
+    if( status != PSA_SUCCESS )
+        return( status );
+
+    if( status != PSA_SUCCESS )
+        goto exit;
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 3\n" );
+
+    ///* Load the public value. */
+    //status = mbedtls_to_psa_error(
+    //             mbedtls_ecp_point_read_binary( &ecp->grp, &ecp->Q,
+    //                                            key,
+    //                                            key_length ) );
+    /* Load the secret value. */
+    status = mbedtls_to_psa_error(
+                 mbedtls_ecp_read_key( grp_id,
+                                       ecp,
+                                       key,
+                                       key_length ) );
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 4 %d\n", status );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    status = psa_ecdsa_sign( ecp,
+                             alg,
+                             hash, hash_length,
+                             signature, signature_size,
+                             signature_length );
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 5 %d\n", status );
+exit:
+    mbedtls_ecp_keypair_free( ecp );
+    mbedtls_free( ecp );
+#endif
+
 #else /* defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECDSA_DETERMINISTIC) && \
          defined(MBEDTLS_SHA256_C) */
     (void) attributes;
@@ -181,16 +251,8 @@ psa_status_t test_opaque_signature_sign_hash(
 {
     #define OPQ_BUFSIZE 64
     size_t key_buffer_length;
-    //psa_key_handle_t handle = 0;
     uint8_t key_buffer[OPQ_BUFSIZE];
     psa_status_t status = PSA_SUCCESS;
-
-    (void) alg;
-    (void) hash;
-    (void) hash_length;
-    (void) signature;
-    (void) signature_size;
-    (void) signature_length;
 
     OPQTD_VALIDATE_RET( attributes != NULL );
     OPQTD_VALIDATE_RET( key != NULL );
@@ -230,33 +292,6 @@ psa_status_t test_opaque_signature_sign_hash(
                                                    signature,
                                                    signature_size,
                                                    signature_length );
-
-    //status = psa_import_key( attributes,
-    //                         key_buffer, key_buffer_length,
-    //                         &handle );
-    //if( status != PSA_SUCCESS )
-    //    return( status );
-    //
-    //if( PSA_SIGN_OUTPUT_SIZE( psa_get_key_type( attributes ),
-    //                          psa_get_key_bits( attributes ),
-    //                          alg ) > signature_size )
-    //{
-    //    psa_destroy_key( handle );
-    //    return( PSA_ERROR_BUFFER_TOO_SMALL );
-    //}
-    //
-    //status = psa_sign_hash( handle, alg, hash, hash_length,
-    //                        signature, signature_size, signature_length );
-    //if( status != PSA_SUCCESS )
-    //{
-    //    psa_destroy_key( handle );
-    //    return( status );
-    //}
-    //
-    //status = psa_destroy_key( handle );
-    //if( status != PSA_SUCCESS )
-    //    return( status );
-
     return( status );
     #undef OPQ_BUFSIZE
 }
