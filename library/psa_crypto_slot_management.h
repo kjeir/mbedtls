@@ -124,5 +124,6 @@ psa_status_t psa_validate_key_location( psa_key_lifetime_t lifetime,
 psa_status_t psa_validate_key_persistence( psa_key_lifetime_t lifetime,
                                            psa_key_id_t key_id );
 
+int psa_is_key_id_valid( psa_key_file_id_t file_id, int vendor_ok );
 
 #endif /* PSA_CRYPTO_SLOT_MANAGEMENT_H */

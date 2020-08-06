@@ -1,5 +1,5 @@
 /*
- * Test driver for signature functions
+ * Test driver for key handling functions
  */
 /*  Copyright (C) 2020, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
@@ -30,11 +30,13 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/error.h"
 
-#include "drivers/keygen.h"
+#include "drivers/key.h"
 
 #include "test/random.h"
 
 #include <string.h>
+#include <ctype.h>
+#include "mbedtls/platform.h"
 
 /* If non-null, on success, copy this to the output. */
 void *test_driver_keygen_forced_output = NULL;
@@ -124,6 +126,94 @@ psa_status_t test_opaque_generate_key(
     (void) key_size;
     (void) key_length;
     return( PSA_ERROR_NOT_SUPPORTED );
+}
+
+/* Parameter validation macros */
+#define OPQTD_VALIDATE_RET( cond ) \
+    MBEDTLS_INTERNAL_VALIDATE_RET( cond, PSA_ERROR_INVALID_ARGUMENT )
+#define OPQTD_VALIDATE( cond ) \
+    MBEDTLS_INTERNAL_VALIDATE( cond )
+
+static void rot13( const uint8_t *in,
+                   size_t len,
+                   uint8_t *out )
+{
+    char c;
+    while( len-- )
+    {
+        c = (char) *in;
+        *out = isalpha( c ) ? tolower(c) < 'n' ? c+13 : c-13 : c;
+        in++;
+        out++;
+    }
+}
+
+psa_status_t test_opaque_import_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *in,
+    size_t in_length,
+    uint8_t *out,
+    size_t out_size,
+    size_t *out_length )
+{
+    OPQTD_VALIDATE_RET( attributes != NULL );
+    OPQTD_VALIDATE_RET( in != NULL );
+    OPQTD_VALIDATE_RET( out != NULL );
+    OPQTD_VALIDATE_RET( out_length != NULL );
+
+    if( ( psa_get_key_type( attributes ) != PSA_KEY_TYPE_AES ) &&
+        ( psa_get_key_type( attributes ) !=
+          PSA_KEY_TYPE_ECC_KEY_PAIR( PSA_ECC_CURVE_SECP_R1 ) ) )
+        return( PSA_ERROR_NOT_SUPPORTED );
+
+    mbedtls_fprintf( stdout, " | | | | %d %ld\n", psa_get_key_type( attributes ), psa_get_key_bits( attributes ) );
+
+    if( ( psa_get_key_bits( attributes ) != 128 ) &&      // AES-128
+        ( psa_get_key_bits( attributes ) != 192 ) &&      // AES-192
+        ( psa_get_key_bits( attributes ) != 256 ) )       // AES-256
+        return( PSA_ERROR_NOT_SUPPORTED );
+
+    if( psa_get_key_bits( attributes ) != PSA_BYTES_TO_BITS( in_length ) )
+        return( PSA_ERROR_INVALID_ARGUMENT );
+
+    if( OPAQUE_TEST_DRIVER_KEYHEADER_SIZE + in_length > out_size )
+        return( PSA_ERROR_BUFFER_TOO_SMALL );
+
+    strcpy( (char *) out, OPAQUE_TEST_DRIVER_KEYHEADER );
+
+    /* Obscure key slightly. */
+    rot13( in, in_length, out + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE );
+
+    *out_length = in_length + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE;
+
+    return( PSA_SUCCESS );
+}
+
+psa_status_t test_opaque_export_public_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *in,
+    size_t in_length,
+    uint8_t *out,
+    size_t out_size,
+    size_t *out_length )
+{
+    OPQTD_VALIDATE_RET( attributes != NULL );
+    OPQTD_VALIDATE_RET( in != NULL );
+    OPQTD_VALIDATE_RET( out != NULL );
+    OPQTD_VALIDATE_RET( out_length != NULL );
+
+    (void) attributes;
+
+    if( in_length <= OPAQUE_TEST_DRIVER_KEYHEADER_SIZE )
+        return( PSA_ERROR_INVALID_ARGUMENT );
+
+    if( in_length - OPAQUE_TEST_DRIVER_KEYHEADER_SIZE > out_size )
+        return( PSA_ERROR_BUFFER_TOO_SMALL );
+
+    *out_length = in_length - OPAQUE_TEST_DRIVER_KEYHEADER_SIZE;
+    rot13( in + OPAQUE_TEST_DRIVER_KEYHEADER_SIZE, *out_length, out );
+
+    return( PSA_SUCCESS );
 }
 
 #endif /* MBEDTLS_PSA_CRYPTO_DRIVERS && PSA_CRYPTO_DRIVER_TEST */

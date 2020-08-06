@@ -1,5 +1,5 @@
 /*
- * Test driver for signature functions
+ * Test driver for key handling functions
  */
 /*  Copyright (C) 2020, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
@@ -19,8 +19,8 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#ifndef PSA_CRYPTO_TEST_DRIVERS_KEYGEN_H
-#define PSA_CRYPTO_TEST_DRIVERS_KEYGEN_H
+#ifndef PSA_CRYPTO_TEST_DRIVERS_KEY_H
+#define PSA_CRYPTO_TEST_DRIVERS_KEY_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -45,5 +45,24 @@ psa_status_t test_opaque_generate_key(
     const psa_key_attributes_t *attributes,
     uint8_t *key, size_t key_size, size_t *key_length );
 
+#define OPAQUE_TEST_DRIVER_KEYHEADER "OPQTDKHEADER"
+#define OPAQUE_TEST_DRIVER_KEYHEADER_SIZE 12U
+
+psa_status_t test_opaque_import_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *in,
+    size_t in_length,
+    uint8_t *out,
+    size_t out_size,
+    size_t *out_length );
+
+psa_status_t test_opaque_export_public_key(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *in,
+    size_t in_length,
+    uint8_t *out,
+    size_t out_size,
+    size_t *out_length );
+
 #endif /* PSA_CRYPTO_DRIVER_TEST */
-#endif /* PSA_CRYPTO_TEST_DRIVERS_KEYGEN_H */
+#endif /* PSA_CRYPTO_TEST_DRIVERS_KEY_H */

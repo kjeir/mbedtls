@@ -22,9 +22,9 @@
 #ifndef PSA_CRYPTO_TEST_DRIVER_H
 #define PSA_CRYPTO_TEST_DRIVER_H
 
-#define PSA_CRYPTO_TEST_DRIVER_LIFETIME 0x7fffff
+#define PSA_CRYPTO_TEST_DRIVER_LOCATION 0x7fffff
 
 #include "drivers/signature.h"
-#include "drivers/keygen.h"
+#include "drivers/key.h"
 
 #endif /* PSA_CRYPTO_TEST_DRIVER_H */

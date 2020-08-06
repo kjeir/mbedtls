@@ -30,6 +30,7 @@
 #include "mbedtls/ecp.h"
 
 #include "drivers/signature.h"
+#include "drivers/key.h"
 
 #include "mbedtls/md.h"
 #include "mbedtls/ecdsa.h"
@@ -37,6 +38,7 @@
 #include "test/random.h"
 
 #include <string.h>
+#include "mbedtls/platform.h"
 
 /* If non-null, on success, copy this to the output. */
 void *test_driver_forced_output = NULL;
@@ -76,10 +78,14 @@ psa_status_t test_transparent_signature_sign_hash(
     defined(MBEDTLS_SHA256_C)
     if( alg != PSA_ALG_DETERMINISTIC_ECDSA( PSA_ALG_SHA_256 ) )
         return( PSA_ERROR_NOT_SUPPORTED );
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash %X %ld\n",
+                             psa_get_key_type( attributes ),
+                             psa_get_key_bits( attributes ) );
     mbedtls_ecp_group_id grp_id;
     switch( psa_get_key_type( attributes ) )
     {
-        case PSA_ECC_CURVE_SECP_R1:
+        case PSA_ECC_CURVE_SECP_R1:                                // 0x12
+        case PSA_KEY_TYPE_ECC_KEY_PAIR( PSA_ECC_CURVE_SECP_R1 ):   // 0x7112
             switch( psa_get_key_bits( attributes ) )
             {
                 case 256:
@@ -102,6 +108,7 @@ psa_status_t test_transparent_signature_sign_hash(
     /* Beyond this point, the driver is actually doing the work of
      * calculating the signature. */
 
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 1\n" );
     status = PSA_ERROR_GENERIC_ERROR;
     int ret = 0;
     mbedtls_mpi r, s;
@@ -111,9 +118,12 @@ psa_status_t test_transparent_signature_sign_hash(
     mbedtls_ecp_keypair_init( &ecp );
     size_t curve_bytes = PSA_BITS_TO_BYTES( ecp.grp.pbits );
 
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 2\n" );
     MBEDTLS_MPI_CHK( mbedtls_ecp_group_load( &ecp.grp, grp_id ) );
+    mbedtls_fprintf( stdout, " | | | | Transp sign hash 3\n" );
     MBEDTLS_MPI_CHK( mbedtls_ecp_point_read_binary( &ecp.grp, &ecp.Q,
                                                     key, key_length ) );
+        mbedtls_fprintf( stdout, " | | | | Transp sign hash 4\n" );
 
     /* Code adapted from psa_ecdsa_sign() in psa_crypto.c. */
     mbedtls_md_type_t md_alg = MBEDTLS_MD_SHA256;
@@ -154,6 +164,14 @@ cleanup:
     return( status );
 }
 
+#include <ctype.h>
+
+/* Parameter validation macros */
+#define OPQTD_VALIDATE_RET( cond ) \
+    MBEDTLS_INTERNAL_VALIDATE_RET( cond, PSA_ERROR_INVALID_ARGUMENT )
+#define OPQTD_VALIDATE( cond ) \
+    MBEDTLS_INTERNAL_VALIDATE( cond )
+
 psa_status_t test_opaque_signature_sign_hash(
     const psa_key_attributes_t *attributes,
     const uint8_t *key, size_t key_length,
@@ -161,16 +179,86 @@ psa_status_t test_opaque_signature_sign_hash(
     const uint8_t *hash, size_t hash_length,
     uint8_t *signature, size_t signature_size, size_t *signature_length )
 {
-    (void) attributes;
-    (void) key;
-    (void) key_length;
+    #define OPQ_BUFSIZE 64
+    size_t key_buffer_length;
+    //psa_key_handle_t handle = 0;
+    uint8_t key_buffer[OPQ_BUFSIZE];
+    psa_status_t status = PSA_SUCCESS;
+
     (void) alg;
     (void) hash;
     (void) hash_length;
     (void) signature;
     (void) signature_size;
     (void) signature_length;
-    return( PSA_ERROR_NOT_SUPPORTED );
+
+    OPQTD_VALIDATE_RET( attributes != NULL );
+    OPQTD_VALIDATE_RET( key != NULL );
+    OPQTD_VALIDATE_RET( hash != NULL );
+    OPQTD_VALIDATE_RET( signature != NULL );
+    OPQTD_VALIDATE_RET( signature_length != NULL );
+
+    if( key_length <= OPAQUE_TEST_DRIVER_KEYHEADER_SIZE )
+        return( PSA_ERROR_INVALID_ARGUMENT );
+
+    status = test_opaque_export_public_key( attributes,
+                                            key,
+                                            key_length,
+                                            key_buffer,
+                                            OPQ_BUFSIZE,
+                                            &key_buffer_length );
+    for( unsigned i = 0; i < key_buffer_length; i++ )
+        if( isalpha( key_buffer[i] ) )
+            mbedtls_fprintf( stdout, "'%c' ", key_buffer[i] );
+        else
+            mbedtls_fprintf( stdout, "%02X ", key_buffer[i] );
+    mbedtls_fprintf( stdout, "\n" );
+    if( status != PSA_SUCCESS )
+        return( status );
+
+    if( PSA_SIGN_OUTPUT_SIZE( psa_get_key_type( attributes ),
+                              psa_get_key_bits( attributes ),
+                              alg ) > signature_size )
+        return( PSA_ERROR_BUFFER_TOO_SMALL );
+
+    status = test_transparent_signature_sign_hash( attributes,
+                                                   key_buffer,
+                                                   key_buffer_length,
+                                                   alg,
+                                                   hash,
+                                                   hash_length,
+                                                   signature,
+                                                   signature_size,
+                                                   signature_length );
+
+    //status = psa_import_key( attributes,
+    //                         key_buffer, key_buffer_length,
+    //                         &handle );
+    //if( status != PSA_SUCCESS )
+    //    return( status );
+    //
+    //if( PSA_SIGN_OUTPUT_SIZE( psa_get_key_type( attributes ),
+    //                          psa_get_key_bits( attributes ),
+    //                          alg ) > signature_size )
+    //{
+    //    psa_destroy_key( handle );
+    //    return( PSA_ERROR_BUFFER_TOO_SMALL );
+    //}
+    //
+    //status = psa_sign_hash( handle, alg, hash, hash_length,
+    //                        signature, signature_size, signature_length );
+    //if( status != PSA_SUCCESS )
+    //{
+    //    psa_destroy_key( handle );
+    //    return( status );
+    //}
+    //
+    //status = psa_destroy_key( handle );
+    //if( status != PSA_SUCCESS )
+    //    return( status );
+
+    return( status );
+    #undef OPQ_BUFSIZE
 }
 
 psa_status_t test_transparent_signature_verify_hash(

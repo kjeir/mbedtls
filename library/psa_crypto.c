@@ -1244,7 +1244,8 @@ psa_status_t psa_destroy_key( psa_key_handle_t handle )
         return( status );
 
     /* Try available accelerators first. */
-    status = psa_driver_wrapper_destroy_key( slot, ... );
+    mbedtls_fprintf( stdout, " | | Destroy-KEY\n" );
+    status = psa_driver_wrapper_destroy_key( slot );  /// !!!!
     if( status != PSA_ERROR_NOT_SUPPORTED )
     {
         if( status != PSA_SUCCESS )
@@ -1312,9 +1313,7 @@ psa_status_t psa_destroy_key( psa_key_handle_t handle )
     }
 #endif /* MBEDTLS_PSA_CRYPTO_SE_C */
 
-#if defined(MBEDTLS_PSA_CRYPTO_SE_C)
 exit:
-#endif /* MBEDTLS_PSA_CRYPTO_SE_C */
     status = psa_wipe_key_slot( slot );
     /* Prioritize CORRUPTION_DETECTED from wiping over a storage error */
     if( overall_status == PSA_SUCCESS )
@@ -1660,7 +1659,11 @@ psa_status_t psa_export_public_key( psa_key_handle_t handle,
     if( status != PSA_SUCCESS )
         return( status );
 
-   /* Wrapper hook here ? ... or perhaps inside psa_internal_export_key() ? */
+    /* Try available accelerators first. */
+    mbedtls_fprintf( stdout, " | | Export-PKEY\n" );
+    status = psa_driver_wrapper_export_public_key( slot );  /// !!!!
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
 
     return( psa_internal_export_key( slot, data, data_size,
                                      data_length, 1 ) );
@@ -1716,15 +1719,18 @@ static psa_status_t psa_validate_key_attributes(
 
     status = psa_validate_key_location( psa_get_key_lifetime( attributes ),
                                         p_drv );
+    mbedtls_fprintf( stdout, " | | Validate attr 0 %d\n", status );
     if( status != PSA_SUCCESS )
         return( status );
 
     status = psa_validate_key_persistence( psa_get_key_lifetime( attributes ),
                                            psa_get_key_id( attributes ) );
+    mbedtls_fprintf( stdout, " | | Validate attr 1 %d\n", status );
     if( status != PSA_SUCCESS )
         return( status );
 
     status = psa_validate_key_policy( &attributes->core.policy );
+    mbedtls_fprintf( stdout, " | | Validate attr 2 %d\n", status );
     if( status != PSA_SUCCESS )
         return( status );
 
@@ -1783,6 +1789,7 @@ static psa_status_t psa_start_key_creation(
     *p_drv = NULL;
 
     status = psa_validate_key_attributes( attributes, p_drv );
+    mbedtls_fprintf( stdout, " | | Start creation %d\n", status );
     if( status != PSA_SUCCESS )
         return( status );
 
@@ -2068,6 +2075,7 @@ psa_status_t psa_import_key( const psa_key_attributes_t *attributes,
     psa_key_slot_t *slot = NULL;
     psa_se_drv_table_entry_t *driver = NULL;
 
+    mbedtls_fprintf( stdout, " | | Import-KEY-0\n" );
     /* Reject zero-length symmetric keys (including raw data key objects).
      * This also rejects any key which might be encoded as an empty string,
      * which is never valid. */
@@ -2076,14 +2084,16 @@ psa_status_t psa_import_key( const psa_key_attributes_t *attributes,
 
     status = psa_start_key_creation( PSA_KEY_CREATION_IMPORT, attributes,
                                      handle, &slot, &driver );
+    mbedtls_fprintf( stdout, " | | Import-KEY-1 %d\n", status );
     if( status != PSA_SUCCESS )
         goto exit;
 
     /* Try available accelerators first. */
-    status = psa_driver_wrapper_import_key( slot, ... );
+    status = psa_driver_wrapper_import_key( attributes,
+                                            slot, data, data_length );
+    mbedtls_fprintf( stdout, " | | Import-KEY-2 %d\n", status );
     if( status != PSA_ERROR_NOT_SUPPORTED )
         goto exit;
-
 
 #if defined(MBEDTLS_PSA_CRYPTO_SE_C)
     if( driver != NULL )
@@ -3645,6 +3655,7 @@ psa_status_t psa_sign_hash( psa_key_handle_t handle,
         return( PSA_ERROR_BUFFER_TOO_SMALL );
 
     status = psa_get_key_from_slot( handle, &slot, PSA_KEY_USAGE_SIGN_HASH, alg );
+    mbedtls_fprintf( stdout, " | | Sign-HASH slot %d\n", status );
     if( status != PSA_SUCCESS )
         goto exit;
     if( ! PSA_KEY_TYPE_IS_KEY_PAIR( slot->attr.type ) )
@@ -3661,6 +3672,7 @@ psa_status_t psa_sign_hash( psa_key_handle_t handle,
                                            signature,
                                            signature_size,
                                            signature_length );
+    mbedtls_fprintf( stdout, " | | Sign-HASH %d\n", status );
     if( status != PSA_ERROR_NOT_SUPPORTED )
         goto exit;
 
@@ -3752,6 +3764,7 @@ psa_status_t psa_verify_hash( psa_key_handle_t handle,
         return( status );
 
     /* Try any of the available accelerators first */
+    mbedtls_fprintf( stdout, " | | Verify-HASH\n" );
     status = psa_driver_wrapper_verify_hash( slot,
                                              alg,
                                              hash,
@@ -5968,8 +5981,8 @@ psa_status_t psa_generate_key( const psa_key_attributes_t *attributes,
     if( status != PSA_SUCCESS )
         goto exit;
 
-    status = psa_driver_wrapper_generate_key( attributes,
-                                              slot );
+    status = psa_driver_wrapper_generate_key( attributes, slot );
+    mbedtls_fprintf( stdout, " | | Generate-KEY %d\n", status );
     if( status != PSA_ERROR_NOT_SUPPORTED ||
         psa_key_lifetime_is_external( attributes->core.lifetime ) )
         goto exit;

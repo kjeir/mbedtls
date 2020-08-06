@@ -45,6 +45,17 @@ psa_status_t psa_driver_wrapper_verify_hash( psa_key_slot_t *slot,
 psa_status_t psa_driver_wrapper_generate_key( const psa_key_attributes_t *attributes,
                                               psa_key_slot_t *slot );
 
+psa_status_t psa_driver_wrapper_destroy_key( psa_key_slot_t *slot );        /// !!!!
+psa_status_t psa_driver_wrapper_export_public_key( psa_key_slot_t *slot );  /// !!!!
+
+psa_status_t psa_driver_wrapper_import_key( const psa_key_attributes_t *attributes,
+                                            psa_key_slot_t *slot,
+                                            const uint8_t *key,
+                                            size_t key_length );
+
+
+
+
 #endif /* PSA_CRYPTO_DRIVER_WRAPPERS_H */
 
 /* End of automatically generated file. */

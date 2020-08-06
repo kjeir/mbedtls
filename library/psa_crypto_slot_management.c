@@ -165,8 +165,7 @@ exit:
  *
  * \return              1 if \p file_id is acceptable, otherwise 0.
  */
-static int psa_is_key_id_valid( psa_key_file_id_t file_id,
-                                int vendor_ok )
+int psa_is_key_id_valid( psa_key_file_id_t file_id, int vendor_ok )
 {
     psa_app_key_id_t key_id = PSA_KEY_FILE_GET_KEY_ID( file_id );
     if( PSA_KEY_ID_USER_MIN <= key_id && key_id <= PSA_KEY_ID_USER_MAX )
@@ -176,34 +175,37 @@ static int psa_is_key_id_valid( psa_key_file_id_t file_id,
              key_id <= PSA_KEY_ID_VENDOR_MAX )
         return( 1 );
     else
+    {
+        mbedtls_fprintf( stdout, " | | Key ID %d %d\n", vendor_ok, key_id );
         return( 0 );
+    }
 }
 #endif /* defined(MBEDTLS_PSA_CRYPTO_STORAGE_C) */
 
-psa_status_t psa_validate_key_location( psa_key_lifetime_t lifetime,
-                                        psa_se_drv_table_entry_t **p_drv )
-{
-    if ( psa_key_lifetime_is_external( lifetime ) )
-    {
-#if defined(MBEDTLS_PSA_CRYPTO_SE_C)
-        psa_se_drv_table_entry_t *driver = psa_get_se_driver_entry( lifetime );
-        if( driver == NULL )
-            return( PSA_ERROR_INVALID_ARGUMENT );
-        else
-        {
-            if (p_drv != NULL)
-                *p_drv = driver;
-            return( PSA_SUCCESS );
-        }
-#else
-        (void) p_drv;
-        return( PSA_ERROR_INVALID_ARGUMENT );
-#endif /* MBEDTLS_PSA_CRYPTO_SE_C */
-    }
-    else
-        /* Local/internal keys are always valid */
-        return( PSA_SUCCESS );
-}
+//psa_status_t psa_validate_key_location( psa_key_lifetime_t lifetime,
+//                                        psa_se_drv_table_entry_t **p_drv )
+//{
+//    if ( psa_key_lifetime_is_external( lifetime ) )
+//    {
+//#if defined(MBEDTLS_PSA_CRYPTO_SE_C)
+//        psa_se_drv_table_entry_t *driver = psa_get_se_driver_entry( lifetime );
+//        if( driver == NULL )
+//            return( PSA_ERROR_INVALID_ARGUMENT );
+//        else
+//        {
+//            if (p_drv != NULL)
+//                *p_drv = driver;
+//            return( PSA_SUCCESS );
+//        }
+//#else
+//        (void) p_drv;
+//        return( PSA_ERROR_INVALID_ARGUMENT );
+//#endif /* MBEDTLS_PSA_CRYPTO_SE_C */
+//    }
+//    else
+//        /* Local/internal keys are always valid */
+//        return( PSA_SUCCESS );
+//}
 
 psa_status_t psa_validate_key_persistence( psa_key_lifetime_t lifetime,
                                            psa_key_id_t key_id )
