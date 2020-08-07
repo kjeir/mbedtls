@@ -172,7 +172,7 @@ cleanup:
     mbedtls_ecp_group_id grp_id;
 
     mbedtls_fprintf( stdout, " | | | | Transp sign hash 1\n" );
-    //status = psa_load_ecp_representation( slot, &ecp );
+
     ecp = mbedtls_calloc(1, sizeof(mbedtls_ecp_keypair));
     if( ecp == NULL )
         return PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -187,9 +187,6 @@ cleanup:
         return( PSA_ERROR_INVALID_ARGUMENT );
     status = mbedtls_to_psa_error(
                 mbedtls_ecp_group_load( &ecp->grp, grp_id ) );
-    if( status != PSA_SUCCESS )
-        return( status );
-
     if( status != PSA_SUCCESS )
         goto exit;
     mbedtls_fprintf( stdout, " | | | | Transp sign hash 3\n" );

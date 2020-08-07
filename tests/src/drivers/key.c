@@ -173,7 +173,7 @@ psa_status_t test_opaque_import_key(
           PSA_KEY_TYPE_ECC_KEY_PAIR( PSA_ECC_CURVE_SECP_R1 ) ) )
         return( PSA_ERROR_NOT_SUPPORTED );
 
-    mbedtls_fprintf( stdout, " | | | | %d %ld\n", psa_get_key_type( attributes ), psa_get_key_bits( attributes ) );
+    mbedtls_fprintf( stdout, " | | | | 0x%X %ld\n", psa_get_key_type( attributes ), psa_get_key_bits( attributes ) );
 
     if( ( psa_get_key_bits( attributes ) != 128 ) &&      // AES-128
         ( psa_get_key_bits( attributes ) != 192 ) &&      // AES-192
